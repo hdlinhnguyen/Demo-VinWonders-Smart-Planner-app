@@ -17,9 +17,15 @@ function getApiKey(): string {
   return key;
 }
 
-function toOpenRouterMessages(messages: ChatMessage[]) {
+function toOpenRouterMessages(
+  messages: ChatMessage[],
+  positionContext?: string
+) {
+  const systemContent = positionContext
+    ? `${VINWONDERS_SYSTEM_PROMPT}\n\n## Vị trí người dùng (giả lập)\n${positionContext}`
+    : VINWONDERS_SYSTEM_PROMPT;
   return [
-    { role: "system" as const, content: VINWONDERS_SYSTEM_PROMPT },
+    { role: "system" as const, content: systemContent },
     ...messages.map((m) => ({
       role: (m.role === "user" ? "user" : "assistant") as
         | "user"
@@ -32,7 +38,8 @@ function toOpenRouterMessages(messages: ChatMessage[]) {
 /** Gọi OpenRouter (OpenAI-compatible) và stream từng đoạn text */
 export async function* streamOpenRouterReply(
   messages: ChatMessage[],
-  model = DEFAULT_MODEL
+  model = DEFAULT_MODEL,
+  positionContext?: string
 ): AsyncGenerator<string> {
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
@@ -46,7 +53,7 @@ export async function* streamOpenRouterReply(
     },
     body: JSON.stringify({
       model,
-      messages: toOpenRouterMessages(messages),
+      messages: toOpenRouterMessages(messages, positionContext),
       stream: true,
     }),
   });

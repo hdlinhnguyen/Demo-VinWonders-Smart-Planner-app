@@ -1,0 +1,1275 @@
+{
+  "meta": {
+    "park": "VinWonders Phú Quốc",
+    "source": "vinwondermap.html",
+    "coordinateSystem": "simple_xy",
+    "mapWidth": 2500,
+    "mapHeight": 1800,
+    "locationCount": 64,
+    "version": "1.0.0",
+    "lastUpdated": "2026-06-03"
+  },
+  "zones": [
+    {
+      "id": "the-gioi-phieu-luu",
+      "name": "Thế giới Phiêu lưu",
+      "color": "#e67e22"
+    },
+    {
+      "id": "the-gioi-loc-xoay",
+      "name": "Thế giới Lốc xoáy",
+      "color": "#3498db"
+    },
+    {
+      "id": "cung-dien-hai-vuong",
+      "name": "Cung điện Hải vương",
+      "color": "#1abc9c"
+    },
+    {
+      "id": "khu-lang-bi-mat",
+      "name": "Khu làng Bí mật",
+      "color": "#27ae60"
+    },
+    {
+      "id": "the-gioi-dieu-ky",
+      "name": "Thế giới Diệu kỳ",
+      "color": "#9b59b6"
+    },
+    {
+      "id": "dai-lo-chau-au",
+      "name": "Đại lộ Châu Âu",
+      "color": "#f39c12"
+    }
+  ],
+  "routes": [
+    {
+      "id": "cong-vao-to-amazon-van",
+      "name": "Lối vào Amazon Van",
+      "fromLocationId": "cong-vao",
+      "toLocationId": "amazon-van",
+      "style": {
+        "color": "#27ae60",
+        "weight": 5,
+        "dashArray": "12, 6"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "hy-lạp-cổ-đại-ancient-greek",
+      "name": "Hy Lạp cổ đại (Ancient Greek)",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 400,
+        "y": 800
+      },
+      "description": "Hy Lạp cổ đại (Ancient Greek) là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "he-kana-rai",
+      "name": "he Kana Rai",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 450,
+        "y": 750
+      },
+      "description": "he Kana Rai là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "nhà-sáng-the-chuent",
+      "name": "Nhà sáng The Chuent",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "restaurant",
+      "typeLabel": "Ẩm thực",
+      "coords": {
+        "x": 350,
+        "y": 780
+      },
+      "description": "Nhà sáng The Chuent phục vụ ẩm thực đa dạng tại Thế giới Phiêu lưu: combo gia đình, đồ uống, món nhanh và khu ngồi mái che. Giờ cao điểm 11:30–13:30 và 17:00–19:00. Loại hình: Ẩm thực. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 30,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ẩm thực",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "huyền-thoại-maya",
+      "name": "Huyền thoại Maya",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 500,
+        "y": 850
+      },
+      "description": "Huyền thoại Maya là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "the-eagle-warmm",
+      "name": "The Eagle Warmm",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 550,
+        "y": 820
+      },
+      "description": "The Eagle Warmm là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "ma-thuật-của-khal-kihats",
+      "name": "Ma thuật của Khal Kihats",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 480,
+        "y": 900
+      },
+      "description": "Ma thuật của Khal Kihats là show/ride chủ đề phép thuật ở Thế giới Phiêu lưu, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "names-bảo-thủ",
+      "name": "Namesų bảo thủ",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 420,
+        "y": 880
+      },
+      "description": "Namesų bảo thủ là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "rừng-già-nam-mỹ",
+      "name": "Rừng già Nam Mỹ",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 300,
+        "y": 950
+      },
+      "description": "Rừng già Nam Mỹ là trò chơi cảm giác mạnh trong Thế giới Phiêu lưu, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "amazon-van",
+      "name": "Amazon Van",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 250,
+        "y": 900
+      },
+      "description": "Trò chơi mô phỏng hành trình khám phá rừng Amazon trên xe van bọc thép. Hành khách trải nghiệm cảnh rừng nhiệt đới, hiệu ứng ánh sáng và âm thanh sống động. Phù hợp gia đình; thời lượng khoảng 8–10 phút mỗi chuyến.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "cong-vao",
+      "name": "Cổng vào",
+      "zone": "Thế giới Phiêu lưu",
+      "type": "gate",
+      "typeLabel": "Cổng vào",
+      "coords": {
+        "x": 200,
+        "y": 920
+      },
+      "description": "Cổng chính dẫn vào khu Thế giới Phiêu lưu, gần điểm Amazon Van. Đây là điểm check-in, nhận bản đồ và hướng dẫn an toàn trước khi vào khu trò chơi. Có quầy nước uống, ghế nghỉ và nhân viên hỗ trợ đa ngôn ngữ.",
+      "openingHours": "08:00 - 20:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Cổng vào",
+        "Thế giới Phiêu lưu"
+      ]
+    },
+    {
+      "id": "bãi-biển-alaha",
+      "name": "Bãi biển Alaha",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1500,
+        "y": 250
+      },
+      "description": "Bãi biển Alaha thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "sóng-thần-oahu",
+      "name": "Sóng thần Oahu",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1600,
+        "y": 280
+      },
+      "description": "Sóng thần Oahu thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "diange",
+      "name": "Diange",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1550,
+        "y": 320
+      },
+      "description": "Diange thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "racer-sade",
+      "name": "Racer Sade",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1650,
+        "y": 300
+      },
+      "description": "Racer Sade thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "win-tomadors",
+      "name": "Win Tomadors",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1700,
+        "y": 350
+      },
+      "description": "Win Tomadors thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "dông-sang-đác-coco",
+      "name": "Dông sang đác Coco",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1750,
+        "y": 400
+      },
+      "description": "Dông sang đác Coco thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "honobilu-water-play",
+      "name": "Honobilu Water Play",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1450,
+        "y": 350
+      },
+      "description": "Honobilu Water Play thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "honda-des-ly",
+      "name": "Honda des ly",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1500,
+        "y": 400
+      },
+      "description": "Honda des ly thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "radbeats-revenge",
+      "name": "Radbeats Revenge",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1550,
+        "y": 450
+      },
+      "description": "Radbeats Revenge thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "chạy-trên-hài-thị",
+      "name": "Chạy trên hài thị",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1600,
+        "y": 480
+      },
+      "description": "Chạy trên hài thị thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "cướp-biển-tí-hon",
+      "name": "Cướp biển tí hon",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1650,
+        "y": 500
+      },
+      "description": "Cướp biển tí hon thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "serpents-wmam",
+      "name": "Serpents Wmam",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1700,
+        "y": 450
+      },
+      "description": "Serpents Wmam thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "wat-sutting",
+      "name": "Wat Sutting",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1750,
+        "y": 480
+      },
+      "description": "Wat Sutting thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "fery-dragon",
+      "name": "Fery Dragon",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1800,
+        "y": 400
+      },
+      "description": "Fery Dragon thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "aspd-whinwent",
+      "name": "Aspd whinwent",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1800,
+        "y": 300
+      },
+      "description": "Aspd whinwent thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "ms-luco",
+      "name": "Ms Luco",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "restaurant",
+      "typeLabel": "Ẩm thực",
+      "coords": {
+        "x": 1750,
+        "y": 250
+      },
+      "description": "Ms Luco phục vụ ẩm thực đa dạng tại Thế giới Lốc xoáy: combo gia đình, đồ uống, món nhanh và khu ngồi mái che. Giờ cao điểm 11:30–13:30 và 17:00–19:00. Loại hình: Ẩm thực. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 30,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ẩm thực",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "cambiomen-as",
+      "name": "Cambiomen as",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1700,
+        "y": 200
+      },
+      "description": "Cambiomen as thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "te-skorm",
+      "name": "Te Skorm",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1650,
+        "y": 150
+      },
+      "description": "Te Skorm thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "đường-trượt-nhiệm",
+      "name": "Đường trượt nhiệm",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1600,
+        "y": 180
+      },
+      "description": "Đường trượt nhiệm thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "nhà-hàng-gateway",
+      "name": "Nhà hàng Gateway",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "restaurant",
+      "typeLabel": "Ẩm thực",
+      "coords": {
+        "x": 1550,
+        "y": 120
+      },
+      "description": "Nhà hàng Gateway phục vụ ẩm thực đa dạng tại Thế giới Lốc xoáy: combo gia đình, đồ uống, món nhanh và khu ngồi mái che. Giờ cao điểm 11:30–13:30 và 17:00–19:00. Loại hình: Ẩm thực. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 30,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ẩm thực",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "con-ma-nhiệt-độ",
+      "name": "Con ma nhiệt độ",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1500,
+        "y": 150
+      },
+      "description": "Con ma nhiệt độ thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "magica-bamboo",
+      "name": "Magica Bamboo",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 1400,
+        "y": 200
+      },
+      "description": "Magica Bamboo là show/ride chủ đề phép thuật ở Thế giới Lốc xoáy, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "đêm-địa-cầu",
+      "name": "Đêm địa cầu",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1450,
+        "y": 280
+      },
+      "description": "Đêm địa cầu thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "kal-dark-side",
+      "name": "Kal Dark Side",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 1400,
+        "y": 300
+      },
+      "description": "Kal Dark Side là show/ride chủ đề phép thuật ở Thế giới Lốc xoáy, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "the-laop",
+      "name": "The Laop",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1350,
+        "y": 350
+      },
+      "description": "The Laop thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "stormge",
+      "name": "Stormge",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1350,
+        "y": 400
+      },
+      "description": "Stormge thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "amanng",
+      "name": "Amanng",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1400,
+        "y": 450
+      },
+      "description": "Amanng thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "khu-vực-trang-phục",
+      "name": "Khu vực trang phục",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "shopping",
+      "typeLabel": "Mua sắm",
+      "coords": {
+        "x": 1450,
+        "y": 500
+      },
+      "description": "Khu vực trang phục bán quà lưu niệm, trang phục chủ đề và phụ kiện VinWonders tại Thế giới Lốc xoáy. Hỗ trợ thanh toán thẻ và ví điện tử. Loại hình: Mua sắm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Mua sắm",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "tag-trạm-thông-tin",
+      "name": "Tag / Trạm thông tin",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "info",
+      "typeLabel": "Thông tin",
+      "coords": {
+        "x": 1500,
+        "y": 550
+      },
+      "description": "Tag / Trạm thông tin là trạm thông tin tại Thế giới Lốc xoáy: bản đồ, lịch biểu diễn, hỗ trợ mất đồ và hướng dẫn lộ trình. Có sẵn brochure tiếng Việt và tiếng Anh. Loại hình: Thông tin. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "08:00 - 20:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thông tin",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "docto-y-tế",
+      "name": "Docto (Y tế)",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "medical",
+      "typeLabel": "Y tế",
+      "coords": {
+        "x": 1550,
+        "y": 580
+      },
+      "description": "Docto (Y tế) cung cấp sơ cứu cơ bản, nghỉ ngơi và hỗ trợ y tế khẩn trong Thế giới Lốc xoáy. Luôn có nhân viên trực; liên hệ tổng đài park nếu cần chuyển viện. Loại hình: Y tế. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "08:00 - 20:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Y tế",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "kenikade",
+      "name": "Kenikade",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1600,
+        "y": 620
+      },
+      "description": "Kenikade thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "mighty-drop",
+      "name": "Mighty Drop",
+      "zone": "Thế giới Lốc xoáy",
+      "type": "water",
+      "typeLabel": "Công viên nước",
+      "coords": {
+        "x": 1650,
+        "y": 650
+      },
+      "description": "Mighty Drop thuộc cụm công viên nước Thế giới Lốc xoáy: đường trượt, bể vận động và khu vui chơi nướng nước. Nên mang đồ bơi; có tủ đồ và phòng thay đồ gần đó. Loại hình: Công viên nước. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Công viên nước",
+        "Thế giới Lốc xoáy"
+      ]
+    },
+    {
+      "id": "quảng-trường-atlantic",
+      "name": "Quảng trường Atlantic",
+      "zone": "Cung điện Hải vương",
+      "type": "aquarium",
+      "typeLabel": "Thủy cung",
+      "coords": {
+        "x": 950,
+        "y": 450
+      },
+      "description": "Quảng trường Atlantic là điểm tham quan thủy sinh trong Cung điện Hải vương, trưng bày hệ sinh thái biển với tunnel kính và chương trình cho cá ăn theo khung giờ. Loại hình: Thủy cung. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 45,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thủy cung",
+        "Cung điện Hải vương"
+      ]
+    },
+    {
+      "id": "vingiêng",
+      "name": "Vingiêng",
+      "zone": "Cung điện Hải vương",
+      "type": "aquarium",
+      "typeLabel": "Thủy cung",
+      "coords": {
+        "x": 1000,
+        "y": 420
+      },
+      "description": "Vingiêng là điểm tham quan thủy sinh trong Cung điện Hải vương, trưng bày hệ sinh thái biển với tunnel kính và chương trình cho cá ăn theo khung giờ. Loại hình: Thủy cung. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 45,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thủy cung",
+        "Cung điện Hải vương"
+      ]
+    },
+    {
+      "id": "the-houst-thea-map",
+      "name": "The houst Thea map",
+      "zone": "Cung điện Hải vương",
+      "type": "info",
+      "typeLabel": "Thông tin",
+      "coords": {
+        "x": 1050,
+        "y": 480
+      },
+      "description": "The houst Thea map là trạm thông tin tại Cung điện Hải vương: bản đồ, lịch biểu diễn, hỗ trợ mất đồ và hướng dẫn lộ trình. Có sẵn brochure tiếng Việt và tiếng Anh. Loại hình: Thông tin. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "08:00 - 20:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thông tin",
+        "Cung điện Hải vương"
+      ]
+    },
+    {
+      "id": "shurkhart",
+      "name": "Shurkhart",
+      "zone": "Cung điện Hải vương",
+      "type": "aquarium",
+      "typeLabel": "Thủy cung",
+      "coords": {
+        "x": 1020,
+        "y": 520
+      },
+      "description": "Shurkhart là điểm tham quan thủy sinh trong Cung điện Hải vương, trưng bày hệ sinh thái biển với tunnel kính và chương trình cho cá ăn theo khung giờ. Loại hình: Thủy cung. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 45,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thủy cung",
+        "Cung điện Hải vương"
+      ]
+    },
+    {
+      "id": "vương-quốc-khổng-lồ",
+      "name": "Vương quốc khổng lồ",
+      "zone": "Cung điện Hải vương",
+      "type": "aquarium",
+      "typeLabel": "Thủy cung",
+      "coords": {
+        "x": 980,
+        "y": 550
+      },
+      "description": "Vương quốc khổng lồ là điểm tham quan thủy sinh trong Cung điện Hải vương, trưng bày hệ sinh thái biển với tunnel kính và chương trình cho cá ăn theo khung giờ. Loại hình: Thủy cung. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 45,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Thủy cung",
+        "Cung điện Hải vương"
+      ]
+    },
+    {
+      "id": "miền-đất-chiến-binh",
+      "name": "Miền đất chiến binh",
+      "zone": "Khu làng Bí mật",
+      "type": "viking",
+      "typeLabel": "Chủ đề Viking",
+      "coords": {
+        "x": 1350,
+        "y": 850
+      },
+      "description": "Miền đất chiến binh mang chủ đề Viking tại Khu làng Bí mật: kiến trúc Bắc Âu, trò chơi tương tác và không gian check-in ảnh. Loại hình: Chủ đề Viking. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Chủ đề Viking",
+        "Khu làng Bí mật"
+      ]
+    },
+    {
+      "id": "rừng-rậm-viễn-chinh",
+      "name": "Rừng rậm viễn chinh",
+      "zone": "Khu làng Bí mật",
+      "type": "viking",
+      "typeLabel": "Chủ đề Viking",
+      "coords": {
+        "x": 1450,
+        "y": 950
+      },
+      "description": "Rừng rậm viễn chinh mang chủ đề Viking tại Khu làng Bí mật: kiến trúc Bắc Âu, trò chơi tương tác và không gian check-in ảnh. Loại hình: Chủ đề Viking. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Chủ đề Viking",
+        "Khu làng Bí mật"
+      ]
+    },
+    {
+      "id": "vương-quốc-kỳ-thú",
+      "name": "Vương quốc kỳ thú",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 900,
+        "y": 1150
+      },
+      "description": "Vương quốc kỳ thú là show/ride chủ đề phép thuật ở Thế giới Diệu kỳ, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "alice-lạc-vào-xứ-thần",
+      "name": "Alice lạc vào xứ thần",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 950,
+        "y": 1120
+      },
+      "description": "Alice lạc vào xứ thần là show/ride chủ đề phép thuật ở Thế giới Diệu kỳ, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "ốc-đảo-ẩn",
+      "name": "Ốc đảo ẩn",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 1000,
+        "y": 1100
+      },
+      "description": "Ốc đảo ẩn là show/ride chủ đề phép thuật ở Thế giới Diệu kỳ, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "thung-lũng-cổ-đại",
+      "name": "Thung lũng cổ đại",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 1050,
+        "y": 1150
+      },
+      "description": "Thung lũng cổ đại là show/ride chủ đề phép thuật ở Thế giới Diệu kỳ, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "khu-rừng-huyền-bí",
+      "name": "Khu rừng huyền bí",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 1100,
+        "y": 1200
+      },
+      "description": "Khu rừng huyền bí là show/ride chủ đề phép thuật ở Thế giới Diệu kỳ, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "sải-cánh-đại-bàng",
+      "name": "Sải cánh đại bàng",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 1050,
+        "y": 1250
+      },
+      "description": "Sải cánh đại bàng là trò chơi cảm giác mạnh trong Thế giới Diệu kỳ, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "miền-tây-hoang-dã",
+      "name": "Miền tây hoang dã",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 950,
+        "y": 1250
+      },
+      "description": "Miền tây hoang dã là trò chơi cảm giác mạnh trong Thế giới Diệu kỳ, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "12-the-sheriff-academy",
+      "name": "12. The Sheriff Academy",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "castle",
+      "typeLabel": "Lâu đài & kiến trúc",
+      "coords": {
+        "x": 900,
+        "y": 1220
+      },
+      "description": "12. The Sheriff Academy là khu kiến trúc lâu đài phong cách châu Âu trong Thế giới Diệu kỳ, phù hợp tham quan, chụp ảnh và các show ngoài trời theo mùa. Loại hình: Lâu đài & kiến trúc. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Lâu đài & kiến trúc",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "deputy-range",
+      "name": "Deputy range",
+      "zone": "Thế giới Diệu kỳ",
+      "type": "adventure",
+      "typeLabel": "Trò chơi mạo hiểm",
+      "coords": {
+        "x": 850,
+        "y": 1180
+      },
+      "description": "Deputy range là trò chơi cảm giác mạnh trong Thế giới Diệu kỳ, kết hợp hiệu ứng thị giác và chuyển động. Khách được cố định an toàn trước khi vận hành; nhân viên giám sát suốt phiên. Loại hình: Trò chơi mạo hiểm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Trên 1m0",
+      "highlights": [
+        "Trò chơi mạo hiểm",
+        "Thế giới Diệu kỳ"
+      ]
+    },
+    {
+      "id": "quảng-trường-phượng-hoàng-lửa",
+      "name": "Quảng trường Phượng Hoàng Lửa",
+      "zone": "Đại lộ Châu Âu",
+      "type": "castle",
+      "typeLabel": "Lâu đài & kiến trúc",
+      "coords": {
+        "x": 950,
+        "y": 1350
+      },
+      "description": "Quảng trường Phượng Hoàng Lửa là khu kiến trúc lâu đài phong cách châu Âu trong Đại lộ Châu Âu, phù hợp tham quan, chụp ảnh và các show ngoài trời theo mùa. Loại hình: Lâu đài & kiến trúc. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Lâu đài & kiến trúc",
+        "Đại lộ Châu Âu"
+      ]
+    },
+    {
+      "id": "chợ-phiên-copenhagen",
+      "name": "Chợ phiên Copenhagen",
+      "zone": "Đại lộ Châu Âu",
+      "type": "shopping",
+      "typeLabel": "Mua sắm",
+      "coords": {
+        "x": 1020,
+        "y": 1380
+      },
+      "description": "Chợ phiên Copenhagen bán quà lưu niệm, trang phục chủ đề và phụ kiện VinWonders tại Đại lộ Châu Âu. Hỗ trợ thanh toán thẻ và ví điện tử. Loại hình: Mua sắm. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Mua sắm",
+        "Đại lộ Châu Âu"
+      ]
+    },
+    {
+      "id": "lâu-đài-huyền-bí",
+      "name": "Lâu đài huyền bí",
+      "zone": "Đại lộ Châu Âu",
+      "type": "castle",
+      "typeLabel": "Lâu đài & kiến trúc",
+      "coords": {
+        "x": 1000,
+        "y": 1450
+      },
+      "description": "Lâu đài huyền bí là khu kiến trúc lâu đài phong cách châu Âu trong Đại lộ Châu Âu, phù hợp tham quan, chụp ảnh và các show ngoài trời theo mùa. Loại hình: Lâu đài & kiến trúc. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Lâu đài & kiến trúc",
+        "Đại lộ Châu Âu"
+      ]
+    },
+    {
+      "id": "palace-omam",
+      "name": "Palace Omam",
+      "zone": "Đại lộ Châu Âu",
+      "type": "castle",
+      "typeLabel": "Lâu đài & kiến trúc",
+      "coords": {
+        "x": 1080,
+        "y": 1420
+      },
+      "description": "Palace Omam là khu kiến trúc lâu đài phong cách châu Âu trong Đại lộ Châu Âu, phù hợp tham quan, chụp ảnh và các show ngoài trời theo mùa. Loại hình: Lâu đài & kiến trúc. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 10,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Lâu đài & kiến trúc",
+        "Đại lộ Châu Âu"
+      ]
+    },
+    {
+      "id": "the-dragon-spell",
+      "name": "The Dragon Spell",
+      "zone": "Đại lộ Châu Âu",
+      "type": "magic",
+      "typeLabel": "Ma thuật & giải trí",
+      "coords": {
+        "x": 920,
+        "y": 1420
+      },
+      "description": "The Dragon Spell là show/ride chủ đề phép thuật ở Đại lộ Châu Âu, kết hợp ánh sáng LED, nhạc nền và diễn viên hóa trang. Loại hình: Ma thuật & giải trí. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 15,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ma thuật & giải trí",
+        "Đại lộ Châu Âu"
+      ]
+    },
+    {
+      "id": "khu-ẩm-thực-âu",
+      "name": "Khu ẩm thực Âu",
+      "zone": "Đại lộ Châu Âu",
+      "type": "restaurant",
+      "typeLabel": "Ẩm thực",
+      "coords": {
+        "x": 1020,
+        "y": 1500
+      },
+      "description": "Khu ẩm thực Âu phục vụ ẩm thực đa dạng tại Đại lộ Châu Âu: combo gia đình, đồ uống, món nhanh và khu ngồi mái che. Giờ cao điểm 11:30–13:30 và 17:00–19:00. Loại hình: Ẩm thực. Tọa độ dùng cho bản đồ tương tác nội bộ.",
+      "openingHours": "09:00 - 18:00",
+      "estimatedDurationMinutes": 30,
+      "ageRestriction": "Mọi lứa tuổi",
+      "highlights": [
+        "Ẩm thực",
+        "Đại lộ Châu Âu"
+      ]
+    }
+  ]
+}

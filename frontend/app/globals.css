@@ -76,3 +76,36 @@ body {
 .chat-markdown strong {
   font-weight: 600;
 }
+
+.vinwonders-map-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.vinwonders-user-icon {
+  background: transparent;
+  border: none;
+}
+
+.vinwonders-user-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #2563eb, 0 2px 8px rgba(37, 99, 235, 0.5);
+}
+
+.vinwonders-user-dot.is-moving {
+  animation: user-pulse 1s ease-in-out infinite;
+}
+
+@keyframes user-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}

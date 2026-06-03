@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import DiscoveryPanel from "./DiscoveryPanel";
+import { useRouteSimulation } from "../hooks/useRouteSimulation";
 import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
@@ -48,6 +49,24 @@ export default function ChatInterface() {
   const [lastQuery, setLastQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const {
+    position: userPosition,
+    isMoving: isSimulating,
+    pickOnMap,
+    setPickOnMap,
+    pathError: simulationPathError,
+    goToLocation,
+    goToCoords,
+    usePredefinedRoute,
+    teleportToLocation,
+    start: startSimulation,
+    pause: pauseSimulation,
+    resetToStart: resetSimulation,
+  } = useRouteSimulation();
+
+  const userPositionRef = useRef(userPosition);
+  userPositionRef.current = userPosition;
 
   const visibleSpots = useMemo(
     () => filterSpotsByText(lastQuery, VINWONDERS_SPOTS),
@@ -107,6 +126,7 @@ export default function ChatInterface() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history.map(({ role, content }) => ({ role, content })),
+          userPosition: userPositionRef.current,
         }),
       });
 
@@ -168,7 +188,11 @@ export default function ChatInterface() {
           ? "Lên lịch chơi VinWonders cuối tuần này cho 2 người lớn"
           : chip === "Gia đình có trẻ nhỏ"
             ? "Gợi ý lịch chơi 1 ngày cho gia đình có trẻ nhỏ"
-            : "Trò chơi cảm giác mạnh nào đáng thử nhất?";
+            : chip === "Amazon Van"
+              ? "Giới thiệu Amazon Van và lối đi từ Cổng vào"
+              : chip === "Tôi đang ở đâu?"
+                ? "Tôi đang ở đâu trên bản đồ và nên đi đâu tiếp?"
+                : "Trò chơi cảm giác mạnh nào đáng thử nhất?";
     sendMessage(mapped);
   }
 
@@ -304,6 +328,18 @@ export default function ChatInterface() {
           onToggleSpot={toggleSpot}
           mobileOpen={discoveryOpen}
           onCloseMobile={() => setDiscoveryOpen(false)}
+          userPosition={userPosition}
+          isSimulating={isSimulating}
+          pathError={simulationPathError}
+          pickOnMap={pickOnMap}
+          onPickOnMapChange={setPickOnMap}
+          onStartSimulation={startSimulation}
+          onPauseSimulation={pauseSimulation}
+          onResetSimulation={resetSimulation}
+          onGoToLocation={goToLocation}
+          onGoToCoords={goToCoords}
+          onTeleport={teleportToLocation}
+          onUseRoute={usePredefinedRoute}
         />
       </div>
 
@@ -315,6 +351,18 @@ export default function ChatInterface() {
           onToggleSpot={toggleSpot}
           mobileOpen={discoveryOpen}
           onCloseMobile={() => setDiscoveryOpen(false)}
+          userPosition={userPosition}
+          isSimulating={isSimulating}
+          pathError={simulationPathError}
+          pickOnMap={pickOnMap}
+          onPickOnMapChange={setPickOnMap}
+          onStartSimulation={startSimulation}
+          onPauseSimulation={pauseSimulation}
+          onResetSimulation={resetSimulation}
+          onGoToLocation={goToLocation}
+          onGoToCoords={goToCoords}
+          onTeleport={teleportToLocation}
+          onUseRoute={usePredefinedRoute}
         />
       </div>
     </div>

@@ -1,6 +1,10 @@
 import { mapProviderError } from "@/bot/errors";
 import { streamOpenRouterReply } from "@/bot/openrouter";
 import type { ChatMessage } from "@/bot/types";
+import {
+  buildUserPositionContext,
+  type SimulatedPosition,
+} from "@/app/data/routeSimulation";
 
 export function parseMessages(body: unknown): ChatMessage[] {
   if (!body || typeof body !== "object") return [];
@@ -23,7 +27,25 @@ export function parseMessages(body: unknown): ChatMessage[] {
     .filter((m) => m.content.length > 0);
 }
 
-export async function handleChat(messages: ChatMessage[]): Promise<Response> {
+export function parseUserPosition(body: unknown): SimulatedPosition | null {
+  if (!body || typeof body !== "object") return null;
+  const pos = (body as { userPosition?: unknown }).userPosition;
+  if (!pos || typeof pos !== "object") return null;
+  const p = pos as SimulatedPosition;
+  if (
+    typeof p.x !== "number" ||
+    typeof p.y !== "number" ||
+    typeof p.progress !== "number"
+  ) {
+    return null;
+  }
+  return p;
+}
+
+export async function handleChat(
+  messages: ChatMessage[],
+  userPosition?: SimulatedPosition | null
+): Promise<Response> {
   if (messages.length === 0) {
     return Response.json(
       { error: "messages không được rỗng" },
@@ -39,8 +61,12 @@ export async function handleChat(messages: ChatMessage[]): Promise<Response> {
     );
   }
 
+  const positionContext = userPosition
+    ? buildUserPositionContext(userPosition)
+    : undefined;
+
   const encoder = new TextEncoder();
-  const generator = streamOpenRouterReply(messages);
+  const generator = streamOpenRouterReply(messages, undefined, positionContext);
 
   let first: IteratorResult<string, void>;
   try {

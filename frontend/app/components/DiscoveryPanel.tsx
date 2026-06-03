@@ -1,7 +1,11 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState } from "react";
 import type { Spot } from "../data/spots";
+import type { ParkCoords } from "../data/locations";
+import type { SimulatedPosition } from "../data/routeSimulation";
+import LocationSimulator from "./LocationSimulator";
+import VinWondersMap from "./VinWondersMap";
 
 interface DiscoveryPanelProps {
   spots: Spot[];
@@ -9,6 +13,18 @@ interface DiscoveryPanelProps {
   onToggleSpot: (spot: Spot) => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  userPosition: SimulatedPosition;
+  isSimulating: boolean;
+  pickOnMap: boolean;
+  onPickOnMapChange: (v: boolean) => void;
+  onStartSimulation: () => void;
+  onPauseSimulation: () => void;
+  onResetSimulation: () => void;
+  pathError?: string | null;
+  onGoToLocation: (id: string, autoStart?: boolean) => void;
+  onGoToCoords: (coords: ParkCoords, autoStart?: boolean) => void;
+  onTeleport: (id: string) => void;
+  onUseRoute: (routeId: string, autoStart?: boolean) => void;
 }
 
 export default function DiscoveryPanel({
@@ -17,7 +33,22 @@ export default function DiscoveryPanel({
   onToggleSpot,
   mobileOpen,
   onCloseMobile,
+  userPosition,
+  isSimulating,
+  pickOnMap,
+  onPickOnMapChange,
+  onStartSimulation,
+  onPauseSimulation,
+  onResetSimulation,
+  pathError,
+  onGoToLocation,
+  onGoToCoords,
+  onTeleport,
+  onUseRoute,
 }: DiscoveryPanelProps) {
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const highlightedIds = new Set(spots.map((s) => s.id));
+
   return (
     <>
       {mobileOpen && (
@@ -34,7 +65,6 @@ export default function DiscoveryPanel({
           mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Header — giống Layla "Select cities" */}
         <div className="flex items-center gap-3 border-b border-border px-5 py-4">
           <button
             type="button"
@@ -45,7 +75,7 @@ export default function DiscoveryPanel({
             <ChevronLeft className="h-4 w-4" />
           </button>
           <h2 className="text-lg font-semibold tracking-tight">
-            Chọn khu vui chơi
+            Bản đồ & địa điểm
           </h2>
           {selectedIds.size > 0 && (
             <span className="ml-auto rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
@@ -54,9 +84,25 @@ export default function DiscoveryPanel({
           )}
         </div>
 
+        <LocationSimulator
+          position={userPosition}
+          isMoving={isSimulating}
+          pathError={pathError}
+          pickOnMap={pickOnMap}
+          onPickOnMapChange={onPickOnMapChange}
+          onStart={onStartSimulation}
+          onPause={onPauseSimulation}
+          onReset={onResetSimulation}
+          onGoToLocation={onGoToLocation}
+          onTeleport={onTeleport}
+          onUseRoute={onUseRoute}
+        />
+
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          {/* Media cards — scroll dọc như Layla */}
           <div className="scroll-area flex-1 overflow-y-auto p-4 lg:max-w-sm lg:border-r lg:border-border">
+            <p className="mb-3 text-xs text-muted">
+              {spots.length} kết quả · dữ liệu từ mock_data
+            </p>
             <div className="space-y-4">
               {spots.map((spot) => (
                 <SpotCard
@@ -64,57 +110,45 @@ export default function DiscoveryPanel({
                   spot={spot}
                   selected={selectedIds.has(spot.id)}
                   onToggle={() => onToggleSpot(spot)}
+                  onShowOnMap={() => setFocusId(spot.id)}
+                  onGoTo={() => onGoToLocation(spot.id, true)}
                 />
               ))}
               {spots.length === 0 && (
                 <p className="py-8 text-center text-sm text-muted">
-                  Không tìm thấy khu phù hợp. Thử hỏi chatbot nhé.
+                  Không tìm thấy địa điểm phù hợp. Thử hỏi chatbot nhé.
                 </p>
               )}
             </div>
           </div>
 
-          {/* Map mock — pin + giá vé style Layla */}
-          <div className="relative hidden min-h-[280px] flex-1 bg-[#e8eef4] lg:block">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,#dce8f0_0%,#c5d5e3_100%)]" />
-            <svg
-              className="absolute inset-0 h-full w-full opacity-30"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <pattern
-                  id="grid"
-                  width="40"
-                  height="40"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <path
-                    d="M 40 0 L 0 0 0 40"
-                    fill="none"
-                    stroke="#94a3b8"
-                    strokeWidth="0.5"
-                  />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
+          <div className="relative hidden min-h-[280px] flex-1 lg:block">
+            <VinWondersMap
+              highlightedIds={highlightedIds}
+              selectedIds={selectedIds}
+              focusId={focusId}
+              userPosition={userPosition}
+              followUser={isSimulating}
+              pickOnMap={pickOnMap}
+              onMapPick={(c) => onGoToCoords(c, true)}
+              onSelectLocation={(id) => setFocusId(id)}
+            />
+          </div>
+        </div>
 
-            {spots.slice(0, 4).map((spot, i) => (
-              <MapPin
-                key={spot.id}
-                spot={spot}
-                selected={selectedIds.has(spot.id)}
-                style={{
-                  top: `${18 + i * 18}%`,
-                  left: `${22 + (i % 2) * 35}%`,
-                }}
-              />
-            ))}
-
-            <div className="absolute bottom-4 left-4 rounded-xl bg-surface/95 px-3 py-2 text-xs shadow-md backdrop-blur">
-              <span className="font-medium">VinWonders Phú Quốc</span>
-              <span className="ml-2 text-muted">Bản đồ tham khảo</span>
-            </div>
+        <div className="border-t border-border p-3 lg:hidden">
+          <p className="mb-2 text-xs font-medium text-muted">Bản đồ</p>
+          <div className="relative h-56 overflow-hidden rounded-xl ring-1 ring-border">
+            <VinWondersMap
+              highlightedIds={highlightedIds}
+              selectedIds={selectedIds}
+              focusId={focusId}
+              userPosition={userPosition}
+              followUser={isSimulating}
+              pickOnMap={pickOnMap}
+              onMapPick={(c) => onGoToCoords(c, true)}
+              onSelectLocation={(id) => setFocusId(id)}
+            />
           </div>
         </div>
       </aside>
@@ -126,71 +160,72 @@ function SpotCard({
   spot,
   selected,
   onToggle,
+  onShowOnMap,
+  onGoTo,
 }: {
   spot: Spot;
   selected: boolean;
   onToggle: () => void;
+  onShowOnMap: () => void;
+  onGoTo: () => void;
 }) {
   return (
     <article className="group overflow-hidden rounded-2xl bg-surface shadow-[0_2px_16px_rgba(0,0,0,0.06)] ring-1 ring-black/5 animate-in">
-      <div
-        className={`relative h-44 bg-gradient-to-br ${spot.gradient}`}
+      <button
+        type="button"
+        onClick={onShowOnMap}
+        className={`relative block w-full h-36 bg-gradient-to-br ${spot.gradient} text-left`}
       >
         <div className="absolute inset-0 bg-black/10" />
-        <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-white backdrop-blur">
+        <div
+          className="absolute left-3 top-3 flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] text-white backdrop-blur"
+          style={{ backgroundColor: `${spot.zoneColor}cc` }}
+        >
           <span className="font-medium">{spot.category}</span>
           <span>·</span>
           <span>★ {spot.rating}</span>
         </div>
         <div className="absolute bottom-3 left-3 right-3">
           <p className="text-xs text-white/90">{spot.location}</p>
-          <h3 className="text-base font-semibold text-white">{spot.name}</h3>
+          <h3 className="text-base font-semibold text-white line-clamp-2">
+            {spot.name}
+          </h3>
+        </div>
+      </button>
+      <p className="line-clamp-2 px-4 pt-3 text-xs leading-relaxed text-muted">
+        {spot.description}
+      </p>
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-xs text-muted">{spot.waitTime}</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onGoTo}
+            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+          >
+            Đi tới
+          </button>
+          <button
+            type="button"
+            onClick={onShowOnMap}
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+          >
+            Xem map
+          </button>
+          <button
+            type="button"
+            onClick={onToggle}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              selected
+                ? "bg-accent text-white"
+                : "bg-foreground text-surface hover:opacity-90"
+            }`}
+          >
+            {selected ? "✓ Đã chọn" : "+ Chọn"}
+          </button>
         </div>
       </div>
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs text-muted">Chờ ~ {spot.waitTime}</span>
-        <button
-          type="button"
-          onClick={onToggle}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-            selected
-              ? "bg-accent text-white"
-              : "bg-foreground text-surface hover:opacity-90"
-          }`}
-        >
-          {selected ? "✓ Đã chọn" : "+ Chọn"}
-        </button>
-      </div>
     </article>
-  );
-}
-
-function MapPin({
-  spot,
-  selected,
-  style,
-}: {
-  spot: Spot;
-  selected: boolean;
-  style: CSSProperties;
-}) {
-  return (
-    <div className="absolute -translate-x-1/2 -translate-y-full" style={style}>
-      <div
-        className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium shadow-lg ${
-          selected
-            ? "bg-accent text-white"
-            : "bg-surface text-foreground ring-1 ring-black/10"
-        }`}
-      >
-        {spot.name.split(" ").slice(0, 2).join(" ")}
-      </div>
-      <div
-        className={`mx-auto mt-0.5 h-2.5 w-2.5 rotate-45 ${
-          selected ? "bg-accent" : "bg-surface ring-1 ring-black/10"
-        }`}
-      />
-    </div>
   );
 }
 

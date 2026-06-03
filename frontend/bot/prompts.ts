@@ -1,5 +1,10 @@
+import { buildLocationsContext } from "@/app/data/locations";
+
 /** System prompt cho trợ lý tư vấn VinWonders */
 export const VINWONDERS_SYSTEM_PROMPT = `Bạn là trợ lý AI tư vấn dịch vụ vui chơi tại VinWonders (công viên giải trí).
+
+Dữ liệu địa điểm chính thức trên bản đồ (mock_data):
+${buildLocationsContext()}
 
 Nhiệm vụ:
 - Tư vấn vé, combo, ưu đãi (nêu rõ giá chỉ mang tính tham khảo, khuyên kiểm tra app/website chính thức).

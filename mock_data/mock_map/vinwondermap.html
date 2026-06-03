@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản đồ tương tác chi tiết VinWonders Phú Quốc</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa; overflow: hidden;
+        }
+        
+        /* Cấu hình chia bố cục Sidebar & Map */
+        #sidebar {
+            position: absolute; top: 0; left: 0; bottom: 0; width: 320px;
+            background: #ffffff; z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column;
+        }
+        #map {
+            position: absolute; top: 0; left: 320px; right: 0; bottom: 0;
+            background-color: #f4f3ef;
+        }
+
+        /* Giao diện Sidebar */
+        .brand-header {
+            background: linear-gradient(135deg, #1A2980 0%, #26D0CE 100%);
+            color: white; padding: 24px 20px; text-align: center;
+        }
+        .brand-header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+        .brand-header p { margin: 6px 0 0 0; font-size: 12px; opacity: 0.85; }
+
+        .search-container { padding: 16px; background: #ffffff; border-bottom: 1px solid #edf2f7; position: relative; }
+        .search-input {
+            width: 100%; padding: 12px 16px 12px 36px; border: 1px solid #cbd5e0;
+            border-radius: 8px; font-size: 13px; box-sizing: border-box; outline: none;
+        }
+        .search-input:focus { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49,130,206,0.15); }
+        .search-icon { position: absolute; left: 28px; top: 26px; color: #a0aec0; font-size: 14px; }
+
+        #zone-list-container { flex: 1; overflow-y: auto; }
+        .zone-group { margin-bottom: 4px; }
+        .zone-header {
+            padding: 14px 20px; background: #f7fafc; font-weight: 600; font-size: 13px;
+            color: #2d3748; cursor: pointer; display: flex; align-items: center; border-left: 4px solid; transition: background 0.2s;
+        }
+        .zone-header:hover { background: #edf2f7; }
+        .zone-items { list-style: none; padding: 0; margin: 0; }
+        .attraction-item {
+            padding: 10px 20px 10px 40px; font-size: 12px; color: #4a5568;
+            cursor: pointer; border-bottom: 1px solid #f0f4f8; transition: all 0.2s;
+        }
+        .attraction-item:hover { background: #ebf8ff; color: #2b6cb0; padding-left: 45px; }
+
+        /* Icon bản đồ và Popup */
+        .custom-map-icon {
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.4));
+            transition: transform 0.2s;
+        }
+        .custom-map-icon:hover { transform: scale(1.2); z-index: 1000 !important; }
+        
+        .leaflet-popup-content-wrapper { border-radius: 8px; padding: 5px; }
+        .leaflet-popup-content h4 { margin: 0 0 4px 0; color: #d32f2f; font-size: 14px; }
+        .leaflet-popup-content em { display: block; color: #666; font-size: 11px; margin-bottom: 5px; }
+        .leaflet-popup-content p { margin: 0; color: #333; font-size: 12px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="brand-header">
+            <h1>VinWonders Phú Quốc</h1>
+            <p>Bản đồ tương tác</p>
+        </div>
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-box" class="search-input" placeholder="Tìm địa điểm, trò chơi..." oninput="filterLocations()">
+        </div>
+        <div id="zone-list-container"></div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // 1. Khởi tạo bản đồ
+        var map = L.map('map', { crs: L.CRS.Simple, minZoom: -1, maxZoom: 3 });
+        var w = 2500, h = 1800;
+        var southWest = map.unproject([0, h], map.getMaxZoom() - 1);
+        var northEast = map.unproject([w, 0], map.getMaxZoom() - 1);
+        var bounds = new L.LatLngBounds(southWest, northEast);
+
+        // L.imageOverlay('DUONG_DAN_ANH_CUA_BAN.jpg', bounds).addTo(map);
+        map.fitBounds(bounds);
+
+        // 2. Icon hệ thống
+        function createCustomIcon(url) {
+            return L.icon({
+                iconUrl: url,
+                iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -17],
+                className: 'custom-map-icon'
+            });
+        }
+        var icons = {
+            restaurant: createCustomIcon('https://img.icons8.com/color/48/000000/restaurant.png'),
+            medical: createCustomIcon('https://img.icons8.com/color/48/quarantine.png'),
+            info: createCustomIcon('https://img.icons8.com/color/48/000000/info.png'),
+            shopping: createCustomIcon('https://img.icons8.com/color/48/000000/shopping-bag.png'),
+            adventure: createCustomIcon('https://img.icons8.com/color/48/000000/roller-coaster.png'),
+            water: createCustomIcon('https://img.icons8.com/color/48/theme-park.png'),
+            aquarium: createCustomIcon('https://img.icons8.com/color/48/000000/turtle.png'),
+            viking: createCustomIcon('https://img.icons8.com/color/48/000000/viking-helmet.png'),
+            magic: createCustomIcon('https://img.icons8.com/color/48/magic-crystal-ball.png'),
+            castle: createCustomIcon('https://img.icons8.com/color/48/000000/castle.png'),
+            default: createCustomIcon('https://img.icons8.com/color/48/000000/marker.png'),
+            gate: createCustomIcon('https://img.icons8.com/color/48/brandenburg-gate.png')
+        };
+
+        var zoneColors = {
+            "Thế giới Phiêu lưu": "#e67e22",
+            "Thế giới Lốc xoáy": "#3498db",
+            "Cung điện Hải vương": "#1abc9c",
+            "Khu làng Bí mật": "#27ae60",
+            "Thế giới Diệu kỳ": "#9b59b6",
+            "Đại lộ Châu Âu": "#f39c12"
+        };
+
+        // 3. Cơ sở dữ liệu
+        var locations = [
+            { name: "Hy Lạp cổ đại (Ancient Greek)", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [400, 800] },
+            { name: "he Kana Rai", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [450, 750] },
+            { name: "Nhà sáng The Chuent", zone: "Thế giới Phiêu lưu", type: "restaurant", coords: [350, 780] },
+            { name: "Huyền thoại Maya", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [500, 850] },
+            { name: "The Eagle Warmm", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [550, 820] },
+            { name: "Ma thuật của Khal Kihats", zone: "Thế giới Phiêu lưu", type: "magic", coords: [480, 900] },
+            { name: "Namesų bảo thủ", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [420, 880] },
+            { name: "Rừng già Nam Mỹ", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [300, 950] },
+            { name: "Amazon Van", zone: "Thế giới Phiêu lưu", type: "adventure", coords: [250, 900] },
+            { name: "Cổng vào", zone: "Thế giới Phiêu lưu", type: "gate", coords: [200, 920] },
+            { name: "Bãi biển Alaha", zone: "Thế giới Lốc xoáy", type: "water", coords: [1500, 250] },
+            { name: "Sóng thần Oahu", zone: "Thế giới Lốc xoáy", type: "water", coords: [1600, 280] },
+            { name: "Diange", zone: "Thế giới Lốc xoáy", type: "water", coords: [1550, 320] },
+            { name: "Racer Sade", zone: "Thế giới Lốc xoáy", type: "water", coords: [1650, 300] },
+            { name: "Win Tomadors", zone: "Thế giới Lốc xoáy", type: "water", coords: [1700, 350] },
+            { name: "Dông sang đác Coco", zone: "Thế giới Lốc xoáy", type: "water", coords: [1750, 400] },
+            { name: "Honobilu Water Play", zone: "Thế giới Lốc xoáy", type: "water", coords: [1450, 350] },
+            { name: "Honda des ly", zone: "Thế giới Lốc xoáy", type: "water", coords: [1500, 400] },
+            { name: "Radbeats Revenge", zone: "Thế giới Lốc xoáy", type: "water", coords: [1550, 450] },
+            { name: "Chạy trên hài thị", zone: "Thế giới Lốc xoáy", type: "water", coords: [1600, 480] },
+            { name: "Cướp biển tí hon", zone: "Thế giới Lốc xoáy", type: "water", coords: [1650, 500] },
+            { name: "Serpents Wmam", zone: "Thế giới Lốc xoáy", type: "water", coords: [1700, 450] },
+            { name: "Wat Sutting", zone: "Thế giới Lốc xoáy", type: "water", coords: [1750, 480] },
+            { name: "Fery Dragon", zone: "Thế giới Lốc xoáy", type: "water", coords: [1800, 400] },
+            { name: "Aspd whinwent", zone: "Thế giới Lốc xoáy", type: "water", coords: [1800, 300] },
+            { name: "Ms Luco", zone: "Thế giới Lốc xoáy", type: "restaurant", coords: [1750, 250] },
+            { name: "Cambiomen as", zone: "Thế giới Lốc xoáy", type: "water", coords: [1700, 200] },
+            { name: "Te Skorm", zone: "Thế giới Lốc xoáy", type: "water", coords: [1650, 150] },
+            { name: "Đường trượt nhiệm", zone: "Thế giới Lốc xoáy", type: "water", coords: [1600, 180] },
+            { name: "Nhà hàng Gateway", zone: "Thế giới Lốc xoáy", type: "restaurant", coords: [1550, 120] },
+            { name: "Con ma nhiệt độ", zone: "Thế giới Lốc xoáy", type: "water", coords: [1500, 150] },
+            { name: "Magica Bamboo", zone: "Thế giới Lốc xoáy", type: "magic", coords: [1400, 200] },
+            { name: "Đêm địa cầu", zone: "Thế giới Lốc xoáy", type: "water", coords: [1450, 280] },
+            { name: "Kal Dark Side", zone: "Thế giới Lốc xoáy", type: "magic", coords: [1400, 300] },
+            { name: "The Laop", zone: "Thế giới Lốc xoáy", type: "water", coords: [1350, 350] },
+            { name: "Stormge", zone: "Thế giới Lốc xoáy", type: "water", coords: [1350, 400] },
+            { name: "Amanng", zone: "Thế giới Lốc xoáy", type: "water", coords: [1400, 450] },
+            { name: "Khu vực trang phục", zone: "Thế giới Lốc xoáy", type: "shopping", coords: [1450, 500] },
+            { name: "Tag / Trạm thông tin", zone: "Thế giới Lốc xoáy", type: "info", coords: [1500, 550] },
+            { name: "Docto (Y tế)", zone: "Thế giới Lốc xoáy", type: "medical", coords: [1550, 580] },
+            { name: "Kenikade", zone: "Thế giới Lốc xoáy", type: "water", coords: [1600, 620] },
+            { name: "Mighty Drop", zone: "Thế giới Lốc xoáy", type: "water", coords: [1650, 650] },
+            { name: "Quảng trường Atlantic", zone: "Cung điện Hải vương", type: "aquarium", coords: [950, 450] },
+            { name: "Vingiêng", zone: "Cung điện Hải vương", type: "aquarium", coords: [1000, 420] },
+            { name: "The houst Thea map", zone: "Cung điện Hải vương", type: "info", coords: [1050, 480] },
+            { name: "Shurkhart", zone: "Cung điện Hải vương", type: "aquarium", coords: [1020, 520] },
+            { name: "Vương quốc khổng lồ", zone: "Cung điện Hải vương", type: "aquarium", coords: [980, 550] },
+            { name: "Miền đất chiến binh", zone: "Khu làng Bí mật", type: "viking", coords: [1350, 850] },
+            { name: "Rừng rậm viễn chinh", zone: "Khu làng Bí mật", type: "viking", coords: [1450, 950] },
+            { name: "Vương quốc kỳ thú", zone: "Thế giới Diệu kỳ", type: "magic", coords: [900, 1150] },
+            { name: "Alice lạc vào xứ thần", zone: "Thế giới Diệu kỳ", type: "magic", coords: [950, 1120] },
+            { name: "Ốc đảo ẩn", zone: "Thế giới Diệu kỳ", type: "magic", coords: [1000, 1100] },
+            { name: "Thung lũng cổ đại", zone: "Thế giới Diệu kỳ", type: "magic", coords: [1050, 1150] },
+            { name: "Khu rừng huyền bí", zone: "Thế giới Diệu kỳ", type: "magic", coords: [1100, 1200] },
+            { name: "Sải cánh đại bàng", zone: "Thế giới Diệu kỳ", type: "adventure", coords: [1050, 1250] },
+            { name: "Miền tây hoang dã", zone: "Thế giới Diệu kỳ", type: "adventure", coords: [950, 1250] },
+            { name: "12. The Sheriff Academy", zone: "Thế giới Diệu kỳ", type: "castle", coords: [900, 1220] },
+            { name: "Deputy range", zone: "Thế giới Diệu kỳ", type: "adventure", coords: [850, 1180] },
+            { name: "Quảng trường Phượng Hoàng Lửa", zone: "Đại lộ Châu Âu", type: "castle", coords: [950, 1350] },
+            { name: "Chợ phiên Copenhagen", zone: "Đại lộ Châu Âu", type: "shopping", coords: [1020, 1380] },
+            { name: "Lâu đài huyền bí", zone: "Đại lộ Châu Âu", type: "castle", coords: [1000, 1450] },
+            { name: "Palace Omam", zone: "Đại lộ Châu Âu", type: "castle", coords: [1080, 1420] },
+            { name: "The Dragon Spell", zone: "Đại lộ Châu Âu", type: "magic", coords: [920, 1420] },
+            { name: "Khu ẩm thực Âu", zone: "Đại lộ Châu Âu", type: "restaurant", coords: [1020, 1500] }
+        ];
+
+        var markersMap = {};
+
+        // 4. Vẽ Marker và liên kết với menu
+        locations.forEach(function(loc) {
+            var leafletCoords = map.unproject([loc.coords[0], loc.coords[1]], map.getMaxZoom() - 1);
+            var locationIcon = icons[loc.type] || icons.default;
+            var marker = L.marker(leafletCoords, { icon: locationIcon }).addTo(map);
+            
+            var popupContent = "<h4>" + loc.name + "</h4>" +
+                               "<em>" + loc.zone + "</em>" +
+                               "<p>Loại: " + loc.type + "</p>";
+            marker.bindPopup(popupContent);
+            markersMap[loc.name] = marker;
+        });
+
+        // Đường nối Cổng vào -> Amazon Van
+        (function() {
+            var congVao = locations.find(function(l) { return l.name === "Cổng vào"; });
+            var amazonVan = locations.find(function(l) { return l.name === "Amazon Van"; });
+            if (!congVao || !amazonVan) return;
+            var z = map.getMaxZoom() - 1;
+            var gatePoint = map.unproject([congVao.coords[0], congVao.coords[1]], z);
+            var amazonPoint = map.unproject([amazonVan.coords[0], amazonVan.coords[1]], z);
+            L.polyline([gatePoint, amazonPoint], {
+                color: '#27ae60', weight: 5, opacity: 0.95,
+                dashArray: '12, 6', lineJoin: 'round'
+            }).addTo(map);
+        })();
+
+        // 5. Vẽ đường đi khép kín
+        var allZones = Object.keys(zoneColors);
+        var mainRoutePoints = [];
+
+        allZones.forEach(function(zone) {
+            var zonePoints = locations.filter(l => l.zone === zone).map(l => {
+                return map.unproject([l.coords[0], l.coords[1]], map.getMaxZoom() - 1);
+            });
+
+            if (zonePoints.length > 1) {
+                // ĐIỂM NHẤN YÊU CẦU: Thêm điểm đầu vào cuối mảng để tạo vòng khép kín
+                zonePoints.push(zonePoints[0]);
+
+                L.polyline(zonePoints, {
+                    color: zoneColors[zone], weight: 3, opacity: 0.7,
+                    dashArray: '8, 8', lineJoin: 'round'
+                }).addTo(map);
+
+                mainRoutePoints.push(zonePoints[0]);
+            }
+        });
+
+        // Đóng vòng khép kín cho cả đường trục chính màu đỏ
+        if (mainRoutePoints.length > 1) {
+            mainRoutePoints.push(mainRoutePoints[0]);
+        }
+        L.polyline(mainRoutePoints, {
+            color: '#e74c3c', weight: 5, opacity: 0.8,
+            dashArray: '15, 10', lineJoin: 'round'
+        }).addTo(map);
+
+        // 6. Tính năng Menu Sidebar
+        function buildSidebar() {
+            var container = document.getElementById('zone-list-container');
+            container.innerHTML = '';
+            
+            allZones.forEach(function(zoneName) {
+                var groupDiv = document.createElement('div');
+                groupDiv.className = 'zone-group';
+                
+                var header = document.createElement('div');
+                header.className = 'zone-header';
+                header.style.borderLeftColor = zoneColors[zoneName];
+                header.innerText = zoneName;
+                
+                var ul = document.createElement('ul');
+                ul.className = 'zone-items';
+                
+                var zoneItems = locations.filter(l => l.zone === zoneName);
+                zoneItems.forEach(function(item) {
+                    var li = document.createElement('li');
+                    li.className = 'attraction-item';
+                    li.innerText = item.name;
+                    li.onclick = function() { 
+                        var marker = markersMap[item.name];
+                        if (marker) {
+                            map.setView(marker.getLatLng(), 2, { animate: true });
+                            setTimeout(() => { marker.openPopup(); }, 300);
+                        }
+                    };
+                    ul.appendChild(li);
+                });
+                
+                groupDiv.appendChild(header);
+                groupDiv.appendChild(ul);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // Tính năng tìm kiếm
+        window.filterLocations = function() {
+            var query = document.getElementById('search-box').value.toLowerCase();
+            var items = document.querySelectorAll('.attraction-item');
+            items.forEach(function(item) {
+                if (item.innerText.toLowerCase().indexOf(query) > -1) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        };
+
+        buildSidebar();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moni — Báo cáo thử nghiệm</title>
+  <style>
+    :root {
+      --momo-primary: #A50064;
+      --momo-secondary: #C81079;
+      --momo-light: #FDF2F8;
+      --text-main: #334155;
+      --bg-body: #f1f5f9;
+      --border-color: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      background-color: var(--bg-body); 
+      color: var(--text-main); 
+      line-height: 1.6; 
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 2.5rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Typography */
+    h1 { font-size: 1.8rem; color: var(--momo-primary); border-bottom: 2px solid var(--momo-primary); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.3rem; color: var(--momo-secondary); margin: 2.5rem 0 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    h2::before { content: "■"; font-size: 0.8em; }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 1rem; color: #1e293b; border-left: 4px solid var(--momo-secondary); padding-left: 0.75rem; }
+    
+    .meta { color: #64748b; font-size: 0.95rem; margin-bottom: 2rem; }
+    .meta strong { color: #475569; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 1px var(--border-color); font-size: 0.95rem; }
+    th, td { padding: 1rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-color); }
+    th { background-color: var(--momo-light); color: var(--momo-primary); width: 25%; font-weight: 600; }
+    tr:last-child th, tr:last-child td { border-bottom: none; }
+    
+    /* Boxes & Callouts */
+    .box { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 1rem 1.5rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .highlight { background: #fefce8; border-left: 4px solid #eab308; padding: 1rem 1.5rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; font-weight: 500; }
+    
+    /* Code & Pre */
+    pre { background: #1e293b; color: #f8fafc; padding: 1.5rem; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; margin: 1rem 0; line-height: 1.4; }
+    pre.mock { background: #f8fafc; color: #334155; border: 1px solid var(--border-color); font-weight: 600; }
+
+    /* Images */
+    .img-group { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; margin: 1rem 0; }
+    .img-group img { height: 350px; width: auto; object-fit: contain; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; }
+    .badge.high { background: #fee2e2; color: #991b1b; }
+    .badge.medium { background: #fef3c7; color: #92400e; }
+
+    ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+    ol li { margin-bottom: 0.5rem; }
+
+    /* Print Optimization */
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; padding: 0; max-width: 100%; }
+      .img-group { flex-wrap: wrap; }
+      pre { white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Moni (MoMo) — Báo cáo thử nghiệm</h1>
+  <p class="meta">
+    Người thử: <strong>Hoàng Đức Trường</strong> &nbsp;·&nbsp;
+    Ngày: <strong>03/06/2026</strong> &nbsp;·&nbsp;
+    App: <strong>Phiên bản MoMo</strong>
+  </p>
+
+  <h2>1. Dùng thử · Promise · Query · Điểm gãy</h2>
+
+  <h3>1.1 Promise</h3>
+  <div class="box">
+    &bull; Tư vấn và hỗ trợ giải đáp các câu hỏi về ví MoMo, các tính năng và dịch vụ của MoMo.<br>
+    &bull; Giúp bạn quản lý chi tiêu, thu nhập, lập báo cáo tài chính cá nhân.<br>
+    &bull; Hỗ trợ tìm kiếm và tư vấn các chương trình khuyến mãi, ưu đãi, voucher ăn uống, mua sắm.<br>
+    &bull; Tư vấn và chọn gói cước data, dịch vụ mạng di động phù hợp.<br>
+    &bull; Hỗ trợ bạn đặt vé xem phim, đặt vé xe, vé máy bay, tìm nhà hàng, quán ăn.<br>
+    &bull; Hỗ trợ về sản phẩm MoMo SoundBox như đặt hàng, bảo hành, sử dụng.<br>
+    &bull; Hỗ trợ thanh toán hóa đơn, chuyển tiền, gửi tiền.
+  </div>
+
+  <h3>1.2 Query thật (3 câu)</h3>
+
+  <h4>Query 1 — FPT Play, không thanh toán định kỳ</h4>
+  <table>
+    <tr><th>Câu hỏi</th><td>Đăng ký FPT Play chỉ 1 tháng, hỗ trợ đăng ký nhưng <strong>không liên kết tài khoản thanh toán định kỳ</strong> có được không?</td></tr>
+    <tr><th>Moni trả lời</th><td>Lần 1: từ chối chung — “chỉ hỗ trợ tài chính và sản phẩm MoMo”. Sau khi user nhắc MoMo thanh toán được FPT Play: xác nhận ví MoMo trả được, hướng dẫn chọn trả từng lần / tắt gia hạn tự động. Khi user phản bác UI bắt liên kết: giải thích dịch vụ hay bật auto-renewal, hướng dẫn vào <em>Quản lý liên kết → Dịch vụ đã liên kết → Hủy liên kết</em>.</td></tr>
+    <tr><th>Kỳ vọng</th><td>Moni hiểu đây là thanh toán dịch vụ qua MoMo (đúng promise “hỗ trợ thanh toán hóa đơn…”) và chỉ dẫn đúng luồng <strong>mua một lần</strong> ngay từ đầu.</td></tr>
+    <tr><th>Thực tế</th><td>Phải sửa bot 2 lần mới có câu trả lời đúng hướng. Lời khuyên “mua gói lẻ” <strong>lệch UI thật</strong> — app bắt liên kết tài khoản, không làm giúp mà đẩy user tự vào settings.</td></tr>
+  </table>
+  <div class="img-group">
+    <img src="./image/z7895751342534_fa9b4e30eaf230ab8ba65c3fa1a096da.jpg" alt="FPT Play — từ chối lần đầu" title="FPT Play — từ chối lần đầu" />
+    <img src="./image/z7895751343454_07017afce8e6fc79bab941d85de6991f.jpg" alt="FPT Play — user phản bác UI liên kết" title="FPT Play — user phản bác UI liên kết" />
+    <img src="./image/z7895751359897_43fbf2c9f977125caf01e7f62658ec69.jpg" alt="FPT Play — hướng dẫn hủy liên kết" title="FPT Play — hướng dẫn hủy liên kết" />
+  </div>
+
+  <h4>Query 2 — Đặt vé xem phim (yêu cầu giọng nghiêm túc)</h4>
+  <table>
+    <tr><th>Câu hỏi</th><td>Đặt vé xem phim tối nay với người yêu thì làm thế nào? <strong>Đề nghị trả lời với thái độ nghiêm túc.</strong></td></tr>
+    <tr><th>Moni trả lời</th><td>6 bước thủ công. Giọng vẫn hài hước (Romeo–Juliet). Sau khi bị nhắc nhở mới rút gọn còn 4 bước — vẫn chỉ là text.</td></tr>
+    <tr><th>Kỳ vọng</th><td>Trả lời ngắn, đúng tone nghiêm túc, có nút/deep link mở thẳng tính năng Vé xem phim.</td></tr>
+    <tr><th>Thực tế</th><td>Bỏ qua yêu cầu tone giọng ở lượt đầu. Không có deep link, không thể đặt vé trực tiếp trong Moni.</td></tr>
+  </table>
+  <div class="img-group">
+    <img src="./image/z7895751371186_0691fc4ab06b00c63c73d25fdc769163.jpg" alt="Đặt vé phim — tone không nghiêm túc" />
+    <img src="./image/z7895751384700_3419e8bf0ffe9a25dd327711f46d9974.jpg" alt="Đặt vé phim — user yêu cầu trả lời trọng tâm" />
+  </div>
+
+  <h4>Query 3 — Quản lý chi tiêu / báo cáo tài chính</h4>
+  <table>
+    <tr><th>Câu hỏi</th><td>
+      (a) Tháng vừa rồi chi tiêu bao nhiêu cho dịch vụ giải trí...<br>
+      (b) Tổng hợp các chi tiêu và đưa ra gợi ý cụ thể.<br>
+      (c) Muốn biết chi từng dịch vụ bao nhiêu tiền → User trả lời <strong>“có”</strong>.
+    </td></tr>
+    <tr><th>Moni trả lời</th><td>Có số liệu tổng (4.7tr) và giải trí (468k). Hỏi user có muốn xem chi tiết không, user nói "có" thì <strong>lặp lại đúng block tổng hợp</strong>.</td></tr>
+    <tr><th>Kỳ vọng</th><td>Gợi ý bám sát số liệu; hiện bảng chi tiết phân bổ khi user yêu cầu.</td></tr>
+    <tr><th>Thực tế</th><td>Nhánh tổng hợp chung chung. Vòng lặp dead-end khi user đồng ý xem chi tiết. Không thể tiếp tục chat từ CTA.</td></tr>
+  </table>
+  <div class="img-group">
+    <img src="./image/z7895795730620_0311fbd5df984f2b43f9d32dacfcccbc.jpg" alt="Chi tiêu giải trí tháng 5" />
+    <img src="./image/z7895795745850_9abf9f7a3bf195c5398a27e8a60a82fe.jpg" alt="Tổng hợp chi tiêu — gợi ý chung" />
+    <img src="./image/z7895795748043_8c16a544c2af1bc254f226df9fe86a76.jpg" alt="User có — Moni lặp lại tổng hợp" />
+  </div>
+
+  <h3>1.3 Điểm gãy</h3>
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Kỳ vọng</th>
+      <th>Thực tế</th>
+      <th>Mức độ</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Trả lời đúng ngay câu FPT Play một lần.</td>
+      <td>Từ chối “ngoài phạm vi” ban đầu. Lời khuyên sau đó lệch với UI thực tế của app.</td>
+      <td><span class="badge high">Cao</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Đặt vé phim + tôn trọng tone user.</td>
+      <td>Chỉ là FAQ thủ công, persona cứng nhắc, không có deep link đặt vé.</td>
+      <td><span class="badge medium">Trung bình</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Báo cáo chi tiết + drill-down.</td>
+      <td>Lặp lại kết quả tổng hợp khi user đòi xem chi tiết. Nút CTA bị liệt.</td>
+      <td><span class="badge high">Cao</span></td>
+    </tr>
+  </table>
+  <div class="highlight">
+    <strong>Gãy chính:</strong> Promise “trợ lý tài chính” gặp lỗi vòng lặp dead-end ở bước cung cấp chi tiết giao dịch. Song song là lỗi khuyên sai luồng UI (Thanh toán FPT) và thiếu khả năng action (Đặt vé phim).
+  </div>
+
+  <h2>2. Phân tích Flow</h2>
+<pre>
+Mở MoMo app
+   │
+   ▼
+Vào Moni (Đọc promise: 7 nhóm năng lực)
+   │
+   ▼
+User nhập câu hỏi
+   │
+   ▼
+Moni sinh câu trả lời (NLU + template / dữ liệu ví?)
+   │
+   ├─► Query chi tiêu ───► [GÃY] Lặp lại tổng hợp, không có list breakdown
+   │
+   ├─► Query FPT Play ───► [GÃY] Khuyên trả 1 lần nhưng UI bắt liên kết định kỳ
+   │
+   └─► Query đặt vé   ───► [GÃY] FAQ text dài dòng, không deep link, mất flow
+   │
+   ▼
+Màn "Chi tiết trò chuyện" (Chỉ đọc, không reply)
+   │
+   ▼
+Về danh sách trò chuyện (Luồng tiếp tục đang phát triển)
+</pre>
+  <p><strong>Path yếu nhất:</strong> Quản lý chi tiêu. Trải nghiệm bị đứt gãy hoàn toàn khi tạo ra một lời hứa ảo ("bạn có muốn xem danh sách cụ thể?") nhưng không thực hiện được.</p>
+
+  <h2>3. Đề xuất Sửa lỗi (Path Quản lý chi tiêu)</h2>
+  <table>
+    <tr><th>Nguyên nhân</th><td>Luồng hội thoại một lượt hoặc state không lưu intent “show_breakdown”. Tính năng tiếp tục chat chưa có nên user kẹt.</td></tr>
+    <tr><th>Đề xuất</th><td>Luôn render bảng breakdown ngay lập tức. Tắt CTA hỏi han cho đến khi tính năng "tiếp tục chat" hoàn thiện. Gắn deep link.</td></tr>
+    <tr><th>Before</th><td>“Bạn muốn xem chi tiết...? Nếu có, vui lòng xác nhận…” → user: có → lặp lại đoạn tổng.</td></tr>
+    <tr><th>After</th><td>Một reply chứa: Tổng + Bảng phân bổ + Gợi ý Action + Nút [Mở Quản lý chi tiêu].</td></tr>
+  </table>
+  
+  <p><strong>Mockup (Wireframe UI):</strong></p>
+<pre class="mock">
+┌ Báo cáo 05/2026 ─────────────┐
+│ Tổng: 4.774.285đ (7 GD)      │
+├──────────────────────────────┤
+│ Giải trí      468.444đ  9.8% │
+│ Ăn uống       ...            │
+│ Mua sắm       ...            │
+├──────────────────────────────┤
+│ 💡 Gợi ý: Giảm giải trí      │
+│ xuống 400k (đang vượt ~68k)  │
+│                              │
+│  [ Mở Quản lý chi tiêu ]     │
+└──────────────────────────────┘
+</pre>
+
+  <h2>Tóm tắt</h2>
+  <ol>
+    <li><strong>Về Promise:</strong> Trợ lý Moni đáp ứng được ý đồ cơ bản nhưng thực thi bề mặt.</li>
+    <li><strong>Gãy lớn nhất:</strong> Tính năng báo cáo chi tiêu lọt vào vòng lặp vô tận, gợi ý sáo rỗng.</li>
+    <li><strong>Giải pháp tức thời:</strong> Hợp nhất thông tin (Tổng + Chi tiết + Deep link) vào một lượt phản hồi duy nhất thay vì hỏi-đáp nhiều lượt khi UI chưa hỗ trợ.</li>
+  </ol>
+</div>
+
+</body>
+</html>

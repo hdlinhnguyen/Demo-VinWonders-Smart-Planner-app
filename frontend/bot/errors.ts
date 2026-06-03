@@ -1,5 +1,5 @@
 function parseOpenRouterMessage(raw: string): string | null {
-  const match = raw.match(/OpenRouter \d+: (\{.*\})/s);
+  const match = raw.match(/OpenRouter \d+: (\{[\s\S]*\})/);
   if (!match) return null;
   try {
     const body = JSON.parse(match[1]) as {

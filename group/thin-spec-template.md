@@ -26,10 +26,13 @@ Khách hàng đi VinWonders thường gặp khó khăn trong việc lên lịch 
 ## 4. Build slice
 
 ```text
-Cho [user] đang [task/workflow],
-prototype sẽ dùng AI để [augment/automate hành động hẹp],
-tạo ra [output],
-và xử lý [failure mode] bằng [mitigation].
+Cho khách hàng đang [lên lịch trình tham quan tại VinWonders Phú Quốc cùng nhóm gia đình có trẻ em và người lớn tuổi],
+
+prototype sẽ dùng AI để [tự động phân tích thông tin đầu vào (thời gian, thành viên, sở thích) và sắp xếp các hoạt động phù hợp vào các mốc giờ cố định],
+
+tạo ra [bản lịch trình tham quan cá nhân hóa chi tiết theo từng mốc giờ (bao gồm khu vui chơi, show diễn, điểm ăn uống, thời gian nghỉ và lý do gợi ý)],
+
+và xử lý [nguy cơ AI gợi ý sai hoạt động không phù hợp với độ tuổi, chiều cao hoặc sức khỏe của trẻ em/người lớn tuổi làm vỡ lịch trình] bằng [cơ chế bộ lọc ràng buộc (constraint filter), hỏi xác nhận lại thông tin (ask again), gắn nhãn cảnh báo điều kiện (warning label) và cung cấp tính năng đổi nhanh hoạt động không phù hợp].
 ```
 
 ## 5. Auto/Aug decision

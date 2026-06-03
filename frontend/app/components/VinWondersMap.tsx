@@ -31,9 +31,27 @@ const ICON_URLS: Record<string, string> = {
   viking: "https://img.icons8.com/color/48/000000/viking-helmet.png",
   magic: "https://img.icons8.com/color/48/magic-crystal-ball.png",
   castle: "https://img.icons8.com/color/48/000000/castle.png",
-  gate: "https://img.icons8.com/color/48/000000/entrance.png",
+  gate: "https://img.icons8.com/color/48/brandenburg-gate.png",
   default: "https://img.icons8.com/color/48/000000/marker.png",
 };
+
+/** Màu nền thống nhất cho mọi route trên bản đồ */
+const ROUTE_BASE = {
+  color: "#94a3b8",
+  weight: 3,
+  opacity: 0.75,
+  dashArray: "8, 8",
+} as const;
+
+/** Lớp chỉ đường đè lên route nền */
+const NAV_OVERLAY = {
+  fullColor: "#fdba74",
+  fullWeight: 5,
+  fullOpacity: 0.55,
+  remainColor: "#ea580c",
+  remainWeight: 6,
+  remainOpacity: 0.95,
+} as const;
 
 interface VinWondersMapProps {
   highlightedIds: Set<string>;
@@ -42,6 +60,8 @@ interface VinWondersMapProps {
   userPosition?: SimulatedPosition | null;
   followUser?: boolean;
   pickOnMap?: boolean;
+  navigationActive?: boolean;
+  navigationDestinationId?: string | null;
   onMapPick?: (coords: ParkCoords) => void;
   onSelectLocation?: (id: string) => void;
 }
@@ -53,6 +73,8 @@ export default function VinWondersMap({
   userPosition,
   followUser = false,
   pickOnMap = false,
+  navigationActive = false,
+  navigationDestinationId = null,
   onMapPick,
   onSelectLocation,
 }: VinWondersMapProps) {
@@ -63,6 +85,8 @@ export default function VinWondersMap({
   const userCircleRef = useRef<Circle | null>(null);
   const tripLineRef = useRef<Polyline | null>(null);
   const remainLineRef = useRef<Polyline | null>(null);
+  const navFullLineRef = useRef<Polyline | null>(null);
+  const navRemainLineRef = useRef<Polyline | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const onSelectRef = useRef(onSelectLocation);
   const onMapPickRef = useRef(onMapPick);
@@ -144,15 +168,15 @@ export default function VinWondersMap({
         const to = getLocationById(route.toLocationId);
         if (!from || !to) continue;
         L.polyline([projectPoint(from), projectPoint(to)], {
-          color: route.style?.color ?? "#27ae60",
-          weight: route.style?.weight ?? 5,
-          opacity: 0.95,
-          dashArray: route.style?.dashArray ?? "12, 6",
+          color: ROUTE_BASE.color,
+          weight: ROUTE_BASE.weight,
+          opacity: ROUTE_BASE.opacity,
+          dashArray: ROUTE_BASE.dashArray,
           lineJoin: "round",
         }).addTo(map);
       }
 
-      // Đường đi theo từng khu (vòng khép kín) + đường trục đỏ — giống vinwondermap.html
+      // Vòng route theo khu + trục nối giữa các khu — cùng một màu nền
       const mainRoutePoints: ReturnType<typeof projectPoint>[] = [];
 
       for (const zone of PARK_ZONES) {
@@ -163,10 +187,10 @@ export default function VinWondersMap({
         zonePoints.push(zonePoints[0]);
 
         L.polyline(zonePoints, {
-          color: zone.color,
-          weight: 3,
-          opacity: 0.7,
-          dashArray: "8, 8",
+          color: ROUTE_BASE.color,
+          weight: ROUTE_BASE.weight,
+          opacity: ROUTE_BASE.opacity,
+          dashArray: ROUTE_BASE.dashArray,
           lineJoin: "round",
         }).addTo(map);
 
@@ -176,10 +200,10 @@ export default function VinWondersMap({
       if (mainRoutePoints.length > 1) {
         const closedMain = [...mainRoutePoints, mainRoutePoints[0]];
         L.polyline(closedMain, {
-          color: "#e74c3c",
-          weight: 5,
-          opacity: 0.8,
-          dashArray: "15, 10",
+          color: ROUTE_BASE.color,
+          weight: ROUTE_BASE.weight + 1,
+          opacity: ROUTE_BASE.opacity,
+          dashArray: ROUTE_BASE.dashArray,
           lineJoin: "round",
         }).addTo(map);
       }
@@ -200,6 +224,8 @@ export default function VinWondersMap({
       userCircleRef.current = null;
       tripLineRef.current = null;
       remainLineRef.current = null;
+      navFullLineRef.current = null;
+      navRemainLineRef.current = null;
       leafletRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
@@ -258,18 +284,34 @@ export default function VinWondersMap({
 
     const trip = userPosition.trip;
     const wps = trip.waypoints;
-    if (wps.length >= 2) {
+
+    const clearNavOverlay = () => {
+      navFullLineRef.current?.remove();
+      navFullLineRef.current = null;
+      navRemainLineRef.current?.remove();
+      navRemainLineRef.current = null;
+    };
+
+    const clearTripLines = () => {
+      tripLineRef.current?.remove();
+      tripLineRef.current = null;
+      remainLineRef.current?.remove();
+      remainLineRef.current = null;
+    };
+
+    if (navigationActive && wps.length >= 2) {
+      clearTripLines();
       const fullLl = wps.map((w) => map.unproject([w.x, w.y], z));
-      if (!tripLineRef.current) {
-        tripLineRef.current = L.polyline(fullLl, {
-          color: "#94a3b8",
-          weight: 2,
-          opacity: 0.6,
-          dashArray: "6, 8",
+
+      if (!navFullLineRef.current) {
+        navFullLineRef.current = L.polyline(fullLl, {
+          color: NAV_OVERLAY.fullColor,
+          weight: NAV_OVERLAY.fullWeight,
+          opacity: NAV_OVERLAY.fullOpacity,
           lineJoin: "round",
         }).addTo(map);
       } else {
-        tripLineRef.current.setLatLngs(fullLl);
+        navFullLineRef.current.setLatLngs(fullLl);
       }
 
       if (userPosition.progress < 1) {
@@ -280,30 +322,66 @@ export default function VinWondersMap({
         const remainLl = remainCoords.map((w) =>
           map.unproject([w.x, w.y], z)
         );
-        if (!remainLineRef.current) {
-          remainLineRef.current = L.polyline(remainLl, {
-            color: "#2563eb",
-            weight: 4,
-            opacity: 0.85,
-            dashArray: "10, 6",
+        if (!navRemainLineRef.current) {
+          navRemainLineRef.current = L.polyline(remainLl, {
+            color: NAV_OVERLAY.remainColor,
+            weight: NAV_OVERLAY.remainWeight,
+            opacity: NAV_OVERLAY.remainOpacity,
             lineJoin: "round",
           }).addTo(map);
         } else {
-          remainLineRef.current.setLatLngs(remainLl);
+          navRemainLineRef.current.setLatLngs(remainLl);
         }
-      } else if (remainLineRef.current) {
-        remainLineRef.current.remove();
-        remainLineRef.current = null;
+        navFullLineRef.current?.bringToFront();
+        navRemainLineRef.current?.bringToFront();
+      } else {
+        navRemainLineRef.current?.remove();
+        navRemainLineRef.current = null;
       }
-    } else if (tripLineRef.current) {
-      tripLineRef.current.remove();
-      tripLineRef.current = null;
-      if (remainLineRef.current) {
-        remainLineRef.current.remove();
-        remainLineRef.current = null;
+    } else {
+      clearNavOverlay();
+
+      if (!navigationActive && wps.length >= 2 && userPosition.isMoving) {
+        const fullLl = wps.map((w) => map.unproject([w.x, w.y], z));
+        if (!tripLineRef.current) {
+          tripLineRef.current = L.polyline(fullLl, {
+            color: ROUTE_BASE.color,
+            weight: ROUTE_BASE.weight,
+            opacity: 0.5,
+            dashArray: ROUTE_BASE.dashArray,
+            lineJoin: "round",
+          }).addTo(map);
+        } else {
+          tripLineRef.current.setLatLngs(fullLl);
+        }
+
+        if (userPosition.progress < 1) {
+          const remainCoords = pathSegmentFromProgress(
+            wps,
+            userPosition.progress
+          );
+          const remainLl = remainCoords.map((w) =>
+            map.unproject([w.x, w.y], z)
+          );
+          if (!remainLineRef.current) {
+            remainLineRef.current = L.polyline(remainLl, {
+              color: ROUTE_BASE.color,
+              weight: ROUTE_BASE.weight + 1,
+              opacity: 0.85,
+              lineJoin: "round",
+            }).addTo(map);
+          } else {
+            remainLineRef.current.setLatLngs(remainLl);
+          }
+        } else {
+          remainLineRef.current?.remove();
+          remainLineRef.current = null;
+        }
+      } else {
+        clearTripLines();
       }
     }
-  }, [userPosition, followUser]);
+  }, [userPosition, followUser, navigationActive]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -317,17 +395,27 @@ export default function VinWondersMap({
       if (!el) return;
       const selected = selectedIds.has(id);
       const highlighted = highlightedIds.has(id);
+      const navDest =
+        navigationActive && navigationDestinationId === id;
       const dim =
-        hasFilter && !highlighted && !selected ? 0.35 : 1;
+        hasFilter && !highlighted && !selected && !navDest ? 0.35 : 1;
       el.style.opacity = String(dim);
-      el.style.filter = selected
-        ? "drop-shadow(0 0 6px #e67e22) scale(1.15)"
-        : highlighted
-          ? "drop-shadow(0 0 4px #3182ce)"
-          : "";
-      el.style.zIndex = selected ? "1000" : highlighted ? "500" : "";
+      el.style.filter = navDest
+        ? "drop-shadow(0 0 8px #ea580c) scale(1.2)"
+        : selected
+          ? "drop-shadow(0 0 6px #e67e22) scale(1.15)"
+          : highlighted
+            ? "drop-shadow(0 0 4px #3182ce)"
+            : "";
+      el.style.zIndex = navDest
+        ? "1100"
+        : selected
+          ? "1000"
+          : highlighted
+            ? "500"
+            : "";
     });
-  }, [highlightedIds, selectedIds]);
+  }, [highlightedIds, selectedIds, navigationActive, navigationDestinationId]);
 
   useEffect(() => {
     if (!focusId) return;

@@ -5,6 +5,7 @@ import type { Spot } from "../data/spots";
 import type { ParkCoords } from "../data/locations";
 import type { SimulatedPosition } from "../data/routeSimulation";
 import LocationSimulator from "./LocationSimulator";
+import NavigationBanner from "./NavigationBanner";
 import VinWondersMap from "./VinWondersMap";
 
 interface DiscoveryPanelProps {
@@ -21,6 +22,9 @@ interface DiscoveryPanelProps {
   onPauseSimulation: () => void;
   onResetSimulation: () => void;
   pathError?: string | null;
+  navigationTarget?: { id: string; name: string } | null;
+  onCancelNavigation?: () => void;
+  onShowDirections: (id: string, name: string) => void;
   onGoToLocation: (id: string, autoStart?: boolean) => void;
   onGoToCoords: (coords: ParkCoords, autoStart?: boolean) => void;
   onTeleport: (id: string) => void;
@@ -41,6 +45,9 @@ export default function DiscoveryPanel({
   onPauseSimulation,
   onResetSimulation,
   pathError,
+  navigationTarget,
+  onCancelNavigation,
+  onShowDirections,
   onGoToLocation,
   onGoToCoords,
   onTeleport,
@@ -84,6 +91,16 @@ export default function DiscoveryPanel({
           )}
         </div>
 
+        {navigationTarget && onCancelNavigation && (
+          <NavigationBanner
+            destinationName={navigationTarget.name}
+            isMoving={isSimulating}
+            isPreview={!isSimulating}
+            progress={userPosition.progress}
+            onCancel={onCancelNavigation}
+          />
+        )}
+
         <LocationSimulator
           position={userPosition}
           isMoving={isSimulating}
@@ -111,7 +128,10 @@ export default function DiscoveryPanel({
                   selected={selectedIds.has(spot.id)}
                   onToggle={() => onToggleSpot(spot)}
                   onShowOnMap={() => setFocusId(spot.id)}
-                  onGoTo={() => onGoToLocation(spot.id, true)}
+                  onShowDirections={() => {
+                    setFocusId(spot.id);
+                    onShowDirections(spot.id, spot.name);
+                  }}
                 />
               ))}
               {spots.length === 0 && (
@@ -128,8 +148,10 @@ export default function DiscoveryPanel({
               selectedIds={selectedIds}
               focusId={focusId}
               userPosition={userPosition}
-              followUser={isSimulating}
+              followUser={isSimulating || !!navigationTarget}
               pickOnMap={pickOnMap}
+              navigationActive={!!navigationTarget}
+              navigationDestinationId={navigationTarget?.id ?? null}
               onMapPick={(c) => onGoToCoords(c, true)}
               onSelectLocation={(id) => setFocusId(id)}
             />
@@ -144,8 +166,10 @@ export default function DiscoveryPanel({
               selectedIds={selectedIds}
               focusId={focusId}
               userPosition={userPosition}
-              followUser={isSimulating}
+              followUser={isSimulating || !!navigationTarget}
               pickOnMap={pickOnMap}
+              navigationActive={!!navigationTarget}
+              navigationDestinationId={navigationTarget?.id ?? null}
               onMapPick={(c) => onGoToCoords(c, true)}
               onSelectLocation={(id) => setFocusId(id)}
             />
@@ -161,13 +185,13 @@ function SpotCard({
   selected,
   onToggle,
   onShowOnMap,
-  onGoTo,
+  onShowDirections,
 }: {
   spot: Spot;
   selected: boolean;
   onToggle: () => void;
   onShowOnMap: () => void;
-  onGoTo: () => void;
+  onShowDirections: () => void;
 }) {
   return (
     <article className="group overflow-hidden rounded-2xl bg-surface shadow-[0_2px_16px_rgba(0,0,0,0.06)] ring-1 ring-black/5 animate-in">
@@ -200,10 +224,10 @@ function SpotCard({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={onGoTo}
-            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+            onClick={onShowDirections}
+            className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100"
           >
-            Đi tới
+            Chỉ đường
           </button>
           <button
             type="button"

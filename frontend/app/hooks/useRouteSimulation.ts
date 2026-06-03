@@ -28,6 +28,10 @@ export function useRouteSimulation() {
   const [isMoving, setIsMoving] = useState(false);
   const [pickOnMap, setPickOnMap] = useState(false);
   const [pathError, setPathError] = useState<string | null>(null);
+  const [navigationTarget, setNavigationTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const tripRef = useRef<SimulationTrip>(getDefaultTrip());
   const progressRef = useRef(0);
 
@@ -50,6 +54,17 @@ export function useRouteSimulation() {
 
     return () => window.clearInterval(id);
   }, [isMoving, syncFromTrip]);
+
+  useEffect(() => {
+    if (
+      navigationTarget &&
+      progressRef.current >= 1 &&
+      !isMoving &&
+      tripRef.current.destinationId === navigationTarget.id
+    ) {
+      setNavigationTarget(null);
+    }
+  }, [position.progress, position.isMoving, navigationTarget, isMoving]);
 
   const setTrip = useCallback(
     (trip: SimulationTrip, startProgress = 0, autoStart = false) => {
@@ -160,10 +175,78 @@ export function useRouteSimulation() {
     setPosition((p) => ({ ...p, isMoving: false }));
   }, []);
 
+  const cancelNavigation = useCallback(() => {
+    setIsMoving(false);
+    setNavigationTarget(null);
+    setPathError(null);
+    const stillTrip: SimulationTrip = {
+      waypoints: [{ x: position.x, y: position.y }],
+      pathLocationIds: [],
+      destinationId: null,
+      destinationName: originLabelFromPosition(position),
+      originLabel: originLabelFromPosition(position),
+      routeId: null,
+    };
+    tripRef.current = stillTrip;
+    syncFromTrip(1, false);
+  }, [position, syncFromTrip]);
+
+  const previewNavigation = useCallback(
+    (destinationId: string, destinationName: string) => {
+      setNavigationTarget({ id: destinationId, name: destinationName });
+      setPathError(null);
+      setIsMoving(false);
+      const trip = tripFromLocationId(
+        { x: position.x, y: position.y },
+        originLabelFromPosition(position),
+        destinationId
+      );
+      if (!trip) {
+        setNavigationTarget(null);
+        const dest = getLocationById(destinationId);
+        setPathError(
+          dest
+            ? `Không có đường route nối tới "${dest.name}".`
+            : "Không tìm thấy địa điểm."
+        );
+        return false;
+      }
+      setTrip(trip, 0, false);
+      return true;
+    },
+    [position, setTrip]
+  );
+
+  const startNavigation = useCallback(
+    (destinationId: string, destinationName: string) => {
+      setNavigationTarget({ id: destinationId, name: destinationName });
+      setPathError(null);
+      const trip = tripFromLocationId(
+        { x: position.x, y: position.y },
+        originLabelFromPosition(position),
+        destinationId
+      );
+      if (!trip) {
+        setNavigationTarget(null);
+        const dest = getLocationById(destinationId);
+        setPathError(
+          dest
+            ? `Không có đường route nối tới "${dest.name}".`
+            : "Không tìm thấy địa điểm."
+        );
+        return false;
+      }
+      setTrip(trip, 0, true);
+      return true;
+    },
+    [position, setTrip]
+  );
+
   const resetToStart = useCallback(() => {
     setIsMoving(false);
     setPickOnMap(false);
     setPathError(null);
+    setNavigationTarget(null);
     tripRef.current = getDefaultTrip();
     syncFromTrip(0, false);
   }, [syncFromTrip]);
@@ -174,10 +257,14 @@ export function useRouteSimulation() {
     pickOnMap,
     setPickOnMap,
     pathError,
+    navigationTarget,
     goToLocation,
     goToCoords,
     usePredefinedRoute,
     teleportToLocation,
+    previewNavigation,
+    startNavigation,
+    cancelNavigation,
     start,
     pause,
     resetToStart,

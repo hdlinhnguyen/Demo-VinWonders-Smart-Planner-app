@@ -22,7 +22,7 @@ function toOpenRouterMessages(
   positionContext?: string
 ) {
   const systemContent = positionContext
-    ? `${VINWONDERS_SYSTEM_PROMPT}\n\n## Vị trí người dùng (giả lập)\n${positionContext}`
+    ? `${VINWONDERS_SYSTEM_PROMPT}\n\n## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
     : VINWONDERS_SYSTEM_PROMPT;
   return [
     { role: "system" as const, content: systemContent },

@@ -17,6 +17,9 @@ export interface ParkLocation {
   estimatedDurationMinutes: number;
   ageRestriction: string;
   highlights: string[];
+  shortSummary?: string;
+  searchTerms?: string[];
+  chatAnswerHint?: string;
 }
 
 export interface ParkRoute {
@@ -35,6 +38,16 @@ export interface ParkZone {
   id: string;
   name: string;
   color: string;
+  aliases?: string[];
+  chatKeywords?: string[];
+}
+
+export interface LocationTypeDef {
+  id: string;
+  typeLabel: string;
+  chatKeywords: string[];
+  userPhrases: string[];
+  proximityQuestion?: string;
 }
 
 export interface ParkDataFile {
@@ -43,7 +56,9 @@ export interface ParkDataFile {
     mapWidth: number;
     mapHeight: number;
     locationCount: number;
+    version?: string;
   };
+  locationTypes?: Record<string, LocationTypeDef>;
   zones: ParkZone[];
   routes: ParkRoute[];
   locations: ParkLocation[];
@@ -51,6 +66,8 @@ export interface ParkDataFile {
 
 export const PARK_DATA = parkData as ParkDataFile;
 export const ALL_LOCATIONS = PARK_DATA.locations;
+export const LOCATION_TYPES: Record<string, LocationTypeDef> =
+  PARK_DATA.locationTypes ?? {};
 export const PARK_ROUTES = PARK_DATA.routes;
 export const PARK_ZONES = PARK_DATA.zones;
 
@@ -127,11 +144,12 @@ export function locationToSpot(loc: ParkLocation): Spot {
     tags: [
       ...new Set([
         ...(TYPE_TAGS[loc.type] ?? []),
+        ...(loc.searchTerms ?? []).slice(0, 8),
         ...zoneTags,
         loc.typeLabel.toLowerCase(),
       ]),
     ],
-    description: loc.description,
+    description: loc.shortSummary ?? loc.description,
     coords: loc.coords,
     type: loc.type,
     zoneColor: ZONE_COLORS[loc.zone] ?? "#64748b",
@@ -149,12 +167,22 @@ export function filterSpotsByText(text: string, spots: Spot[] = ALL_SPOTS): Spot
   if (!t) return spots.slice(0, 12);
 
   const matched = spots.filter(
-    (s) =>
-      s.name.toLowerCase().includes(t) ||
-      s.location.toLowerCase().includes(t) ||
-      s.category.toLowerCase().includes(t) ||
-      s.description.toLowerCase().includes(t) ||
-      s.tags.some((tag) => t.includes(tag) || tag.includes(t.slice(0, 4)))
+    (s) => {
+      const loc = getLocationById(s.id);
+      const terms = loc?.searchTerms ?? [];
+      return (
+        s.name.toLowerCase().includes(t) ||
+        s.location.toLowerCase().includes(t) ||
+        s.category.toLowerCase().includes(t) ||
+        s.description.toLowerCase().includes(t) ||
+        s.tags.some((tag) => t.includes(tag) || tag.includes(t.slice(0, 4))) ||
+        terms.some(
+          (term) =>
+            t.includes(term.toLowerCase()) ||
+            term.toLowerCase().includes(t.slice(0, Math.min(t.length, 6)))
+        )
+      );
+    }
   );
 
   if (matched.length > 0) return matched.slice(0, 20);
@@ -187,14 +215,31 @@ export function filterSpotsByText(text: string, spots: Spot[] = ALL_SPOTS): Spot
 /** Tóm tắt địa điểm cho system prompt chatbot */
 export function buildLocationsContext(): string {
   const lines: string[] = [
-    `Công viên: ${PARK_DATA.meta.park}. Tổng ${ALL_LOCATIONS.length} địa điểm trên bản đồ.`,
+    `Công viên: ${PARK_DATA.meta.park}. Tổng ${ALL_LOCATIONS.length} địa điểm (mock_data v${PARK_DATA.meta.version ?? "1"}).`,
+    "",
+    "### Cách khách hay hỏi (map sang loại địa điểm)",
   ];
+
+  for (const typeDef of Object.values(LOCATION_TYPES)) {
+    lines.push(
+      `- **${typeDef.typeLabel}** (${typeDef.id}): ${typeDef.chatKeywords.slice(0, 5).join(", ")}`
+    );
+    if (typeDef.proximityQuestion) {
+      lines.push(`  Ví dụ: "${typeDef.proximityQuestion}"`);
+    }
+  }
+
   for (const zone of PARK_ZONES) {
     const items = ALL_LOCATIONS.filter((l) => l.zone === zone.name);
     lines.push(`\n## ${zone.name}`);
+    if (zone.aliases?.length) {
+      lines.push(`(Còn gọi: ${zone.aliases.join(", ")})`);
+    }
     for (const loc of items) {
       lines.push(
-        `- ${loc.name} (${loc.typeLabel}): ${loc.description.slice(0, 160)}${loc.description.length > 160 ? "…" : ""}`
+        `- **${loc.name}** [${loc.typeLabel}]`,
+        `  ${loc.shortSummary ?? loc.description.slice(0, 180)}`,
+        `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 6).join(", ")}`
       );
     }
   }

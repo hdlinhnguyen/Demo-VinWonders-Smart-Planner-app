@@ -1,10 +1,13 @@
 import { mapProviderError } from "@/bot/errors";
 import { streamOpenRouterReply } from "@/bot/openrouter";
 import type { ChatMessage } from "@/bot/types";
+import { buildFullUserLocationContext } from "@/app/data/locationProximity";
+import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
-  buildUserPositionContext,
-  type SimulatedPosition,
-} from "@/app/data/routeSimulation";
+  buildProximityReply,
+  formatMissingPositionReply,
+} from "@/app/data/proximityReply";
+import type { SimulatedPosition } from "@/app/data/routeSimulation";
 
 export function parseMessages(body: unknown): ChatMessage[] {
   if (!body || typeof body !== "object") return [];
@@ -42,6 +45,22 @@ export function parseUserPosition(body: unknown): SimulatedPosition | null {
   return p;
 }
 
+function streamPlainText(text: string): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(text));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
 export async function handleChat(
   messages: ChatMessage[],
   userPosition?: SimulatedPosition | null
@@ -61,8 +80,25 @@ export async function handleChat(
     );
   }
 
+  const proximityIntent = detectProximityIntent(last.content);
+  if (proximityIntent) {
+    if (!userPosition) {
+      return Response.json({
+        mode: "proximity",
+        content: formatMissingPositionReply(),
+        suggestNav: null,
+      });
+    }
+    const result = buildProximityReply(userPosition, proximityIntent);
+    return Response.json({
+      mode: "proximity",
+      content: result.text,
+      suggestNav: result.suggestNav,
+    });
+  }
+
   const positionContext = userPosition
-    ? buildUserPositionContext(userPosition)
+    ? buildFullUserLocationContext(userPosition)
     : undefined;
 
   const encoder = new TextEncoder();

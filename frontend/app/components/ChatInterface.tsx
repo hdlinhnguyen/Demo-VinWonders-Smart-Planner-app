@@ -10,6 +10,12 @@ import {
 } from "react";
 import DiscoveryPanel from "./DiscoveryPanel";
 import { useRouteSimulation } from "../hooks/useRouteSimulation";
+import type { NavSuggestion } from "../data/navConfirmation";
+import {
+  isNavConfirm,
+  isNavDecline,
+  navDeclineReply,
+} from "../data/navConfirmation";
 import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
@@ -47,6 +53,8 @@ export default function ChatInterface() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const [lastQuery, setLastQuery] = useState("");
+  const [pendingNavSuggestion, setPendingNavSuggestion] =
+    useState<NavSuggestion | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -56,10 +64,13 @@ export default function ChatInterface() {
     pickOnMap,
     setPickOnMap,
     pathError: simulationPathError,
+    navigationTarget,
     goToLocation,
     goToCoords,
     usePredefinedRoute,
     teleportToLocation,
+    previewNavigation,
+    cancelNavigation,
     start: startSimulation,
     pause: pauseSimulation,
     resetToStart: resetSimulation,
@@ -91,6 +102,16 @@ export default function ChatInterface() {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, [input]);
 
+  function handleCancelNavigation() {
+    cancelNavigation();
+    setPendingNavSuggestion(null);
+  }
+
+  function handleShowDirections(id: string, name: string) {
+    setPendingNavSuggestion(null);
+    previewNavigation(id, name);
+  }
+
   function toggleSpot(spot: Spot) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -107,26 +128,57 @@ export default function ChatInterface() {
     setLastQuery(trimmed);
     setDiscoveryOpen(true);
 
+    if (pendingNavSuggestion && isNavConfirm(trimmed)) {
+      const { id, name } = pendingNavSuggestion;
+      setPendingNavSuggestion(null);
+      setInput("");
+      previewNavigation(id, name);
+      return;
+    }
+
     const userMsg: Message = {
       id: createId(),
       role: "user",
       content: trimmed,
     };
-    const history = [...messages, userMsg].filter((m) => m.id !== "welcome");
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+
+    if (pendingNavSuggestion) {
+      if (isNavDecline(trimmed)) {
+        setPendingNavSuggestion(null);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId(),
+            role: "assistant",
+            content: navDeclineReply(),
+          },
+        ]);
+        return;
+      }
+
+      setPendingNavSuggestion(null);
+    }
+
+    const history = [...messages, userMsg].filter((m) => m.id !== "welcome");
+
     setIsLoading(true);
 
     const assistantId = createId();
 
     try {
+      const livePosition = userPositionRef.current;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history.map(({ role, content }) => ({ role, content })),
-          userPosition: userPositionRef.current,
+          userPosition: {
+            ...livePosition,
+            updatedAt: Date.now(),
+          },
         }),
       });
 
@@ -141,8 +193,31 @@ export default function ChatInterface() {
         throw new Error(errMsg);
       }
 
+      const contentType = res.headers.get("Content-Type") ?? "";
+
+      if (contentType.includes("application/json")) {
+        const data = (await res.json()) as {
+          mode?: string;
+          content?: string;
+          suggestNav?: NavSuggestion | null;
+        };
+        const content = data.content ?? "";
+        setLastQuery(content);
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: "assistant", content },
+        ]);
+        if (data.mode === "proximity" && data.suggestNav) {
+          setPendingNavSuggestion(data.suggestNav);
+        } else {
+          setPendingNavSuggestion(null);
+        }
+        return;
+      }
+
       if (!res.body) throw new Error("Phản hồi không hợp lệ");
 
+      setPendingNavSuggestion(null);
       setMessages((prev) => [
         ...prev,
         { id: assistantId, role: "assistant", content: "" },
@@ -188,10 +263,10 @@ export default function ChatInterface() {
           ? "Lên lịch chơi VinWonders cuối tuần này cho 2 người lớn"
           : chip === "Gia đình có trẻ nhỏ"
             ? "Gợi ý lịch chơi 1 ngày cho gia đình có trẻ nhỏ"
-            : chip === "Amazon Van"
-              ? "Giới thiệu Amazon Van và lối đi từ Cổng vào"
-              : chip === "Tôi đang ở đâu?"
-                ? "Tôi đang ở đâu trên bản đồ và nên đi đâu tiếp?"
+            : chip === "Tôi đang ở đâu?"
+              ? "Tôi đang ở gần địa điểm nào nhất trên bản đồ?"
+              : chip === "Mạo hiểm gần tôi"
+                ? "Tìm cho tôi trò chơi mạo hiểm gần tôi nhất theo đường đi"
                 : "Trò chơi cảm giác mạnh nào đáng thử nhất?";
     sendMessage(mapped);
   }
@@ -208,11 +283,26 @@ export default function ChatInterface() {
     }
   }
 
+  function handleNavConfirm() {
+    if (!pendingNavSuggestion || isLoading) return;
+    const { id, name } = pendingNavSuggestion;
+    setPendingNavSuggestion(null);
+    previewNavigation(id, name);
+    setDiscoveryOpen(true);
+  }
+
+  function handleNavDecline() {
+    if (!pendingNavSuggestion || isLoading) return;
+    sendMessage("Không");
+  }
+
   function resetChat() {
     setMessages([INITIAL_MESSAGE]);
     setSelectedIds(new Set());
     setLastQuery("");
     setInput("");
+    setPendingNavSuggestion(null);
+    cancelNavigation();
   }
 
   return (
@@ -265,7 +355,26 @@ export default function ChatInterface() {
               )}
 
             {/* Quick chips — ngay dưới tin nhắn bot cuối (Layla behavior) */}
-            {!isLoading && lastAssistant && (
+            {!isLoading && pendingNavSuggestion && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleNavConfirm}
+                  className="rounded-full border border-orange-300 bg-orange-50 px-3.5 py-1.5 text-sm font-medium text-orange-900 transition hover:bg-orange-100"
+                >
+                  Có, chỉ đường
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNavDecline}
+                  className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-foreground transition hover:border-accent hover:bg-accent/5"
+                >
+                  Không
+                </button>
+              </div>
+            )}
+
+            {!isLoading && !pendingNavSuggestion && lastAssistant && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {QUICK_CHIPS.map((chip) => (
                   <button
@@ -331,6 +440,9 @@ export default function ChatInterface() {
           userPosition={userPosition}
           isSimulating={isSimulating}
           pathError={simulationPathError}
+          navigationTarget={navigationTarget}
+          onCancelNavigation={handleCancelNavigation}
+          onShowDirections={handleShowDirections}
           pickOnMap={pickOnMap}
           onPickOnMapChange={setPickOnMap}
           onStartSimulation={startSimulation}
@@ -354,6 +466,9 @@ export default function ChatInterface() {
           userPosition={userPosition}
           isSimulating={isSimulating}
           pathError={simulationPathError}
+          navigationTarget={navigationTarget}
+          onCancelNavigation={handleCancelNavigation}
+          onShowDirections={handleShowDirections}
           pickOnMap={pickOnMap}
           onPickOnMapChange={setPickOnMap}
           onStartSimulation={startSimulation}

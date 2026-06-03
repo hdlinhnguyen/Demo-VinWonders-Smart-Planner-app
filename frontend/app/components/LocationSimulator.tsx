@@ -112,6 +112,9 @@ export default function LocationSimulator({
         <span className="font-medium text-foreground">
           {position.nearLocationName ?? "—"}
         </span>
+        <span className="ml-1 text-[10px] text-muted/80">
+          (x={Math.round(position.x)}, y={Math.round(position.y)})
+        </span>
       </p>
 
       <div className="mt-2 flex flex-wrap gap-2">

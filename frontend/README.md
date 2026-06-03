@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trợ lý VinWonders — Chatbot (Next.js + OpenRouter)
 
-## Getting Started
+Giao diện chat tư vấn dịch vụ vui chơi tại VinWonders, backend gọi LLM qua **[OpenRouter](https://openrouter.ai/)** và `OPENROUTER_API_KEY`.
 
-First, run the development server:
+## Yêu cầu
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Node.js** 18 trở lên (khuyến nghị 20+)
+- **npm**
+- API key OpenRouter: [openrouter.ai/keys](https://openrouter.ai/keys)
+
+## Cấu trúc thư mục
+
+```text
+frontend/
+├── app/                    # UI Next.js (trang chat)
+├── bot/                    # Logic bot: prompt, gọi OpenRouter
+│   ├── openrouter.ts
+│   ├── prompts.ts
+│   ├── errors.ts
+│   └── types.ts
+├── api/                    # Xử lý request chat
+│   └── chat.ts
+├── app/api/chat/route.ts   # Endpoint POST /api/chat
+├── .env.example
+└── .env hoặc .env.local    # OPENROUTER_API_KEY (tự tạo, không commit)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Cài đặt
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd frontend
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cấu hình biến môi trường
 
-## Learn More
+Tạo file **`frontend/.env`** hoặc **`frontend/.env.local`**:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Copy từ `.env.example` nếu cần.
+- **Không** commit file chứa key thật (đã nằm trong `.gitignore`).
+- Danh sách model: [openrouter.ai/models](https://openrouter.ai/models) — model miễn phí thường có hậu tố `:free`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Chạy bot (development)
 
-## Deploy on Vercel
+```bash
+cd frontend
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Mở trình duyệt: [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Gõ tin nhắn hoặc bấm gợi ý sẵn trên màn hình chào.
+- Phản hồi được **stream** từ OpenRouter.
+
+### Nếu port 3000 đang bận
+
+```bash
+npx next dev -p 3001
+```
+
+## Build & chạy production (tùy chọn)
+
+```bash
+cd frontend
+npm run build
+npm run start
+```
+
+## Kiểm tra API trực tiếp
+
+**Lưu ý:** `/api/chat` trả về **stream text**. Nên test bằng **trình duyệt** (http://localhost:3000) hoặc `curl`.
+
+```bash
+curl -X POST http://localhost:3000/api/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"messages\":[{\"role\":\"user\",\"content\":\"Gợi ý lịch chơi 1 ngày\"}]}"
+```
+
+Khi OpenRouter lỗi (401, 429…), API trả **JSON** `{"error":"..."}`:
+
+```powershell
+try {
+  Invoke-WebRequest -Uri http://localhost:3000/api/chat -Method POST `
+    -ContentType "application/json" `
+    -Body '{"messages":[{"role":"user","content":"xin chao"}]}' -UseBasicParsing
+} catch {
+  $_.Exception.Response.StatusCode
+  $reader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+  $reader.ReadToEnd()
+}
+```
+
+## Lỗi thường gặp
+
+| Triệu chứng | Cách xử lý |
+|---|---|
+| `OPENROUTER_API_KEY chưa được cấu hình` (503) | Thêm key vào `frontend/.env`, **restart** `npm run dev`. |
+| 401 / key không hợp lệ | Tạo key mới tại [openrouter.ai/keys](https://openrouter.ai/keys). |
+| 402 / thiếu credits | Nạp credits hoặc dùng model `:free`. |
+| 429 / rate limit | Đợi vài phút hoặc đổi `OPENROUTER_MODEL`. |
+| Port đã được sử dụng | Dừng process cũ hoặc `npx next dev -p 3001`. |
+
+## Tùy chỉnh bot
+
+- **Persona / nội dung tư vấn:** `bot/prompts.ts`
+- **Model:** `OPENROUTER_MODEL` trong `.env` hoặc `bot/openrouter.ts`
+- **Logic API:** `api/chat.ts` và `app/api/chat/route.ts`

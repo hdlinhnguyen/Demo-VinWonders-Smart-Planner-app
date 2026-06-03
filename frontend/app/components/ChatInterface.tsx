@@ -76,7 +76,20 @@ export default function ChatInterface() {
         }),
       });
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
+        let errMsg = "Phản hồi không hợp lệ";
+        try {
+          const data = await res.json();
+          if (data?.error && typeof data.error === "string") {
+            errMsg = data.error;
+          }
+        } catch {
+          /* body không phải JSON */
+        }
+        throw new Error(errMsg);
+      }
+
+      if (!res.body) {
         throw new Error("Phản hồi không hợp lệ");
       }
 
@@ -101,14 +114,17 @@ export default function ChatInterface() {
           );
         }
       }
-    } catch {
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Xin lỗi, đã có lỗi khi kết nối tới máy chủ. Vui lòng thử lại.";
       setMessages((prev) => [
         ...prev,
         {
           id: assistantId,
           role: "assistant",
-          content:
-            "Xin lỗi, đã có lỗi khi kết nối tới máy chủ. Vui lòng thử lại.",
+          content: msg,
         },
       ]);
     } finally {

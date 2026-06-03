@@ -4,12 +4,37 @@
 
 Day 05 không phải một buổi học đầy đủ về AI Product Management. Đây là ngày **khởi động mini-hackathon Day 06**. Cuối ngày, nhóm chưa cần có prototype hoàn chỉnh, nhưng phải đủ rõ để sáng mai build ngay.
 
+## Chạy chatbot VinWonders (prototype)
+
+Prototype chat tư vấn dịch vụ vui chơi VinWonders nằm trong folder **`frontend/`**.
+
+```bash
+cd frontend
+npm install
+```
+
+Tạo `frontend/.env` (hoặc `.env.local`) với:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+```
+
+Chạy:
+
+```bash
+npm run dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000). Hướng dẫn chi tiết, cấu trúc `bot/` / `api/`, xử lý lỗi: xem **[frontend/README.md](frontend/README.md)**.
+
 ## Tài liệu trong folder này
 
 Folder này được chia theo đúng việc cần làm:
 
 | Folder / File | Dùng để làm gì |
 |---|---|
+| `frontend/` | Chatbot Next.js + OpenRouter — trợ lý tư vấn VinWonders. |
 | `01-invidual-workshop/app-teardown.md` | Bài mổ app AI thật: dùng thử, vẽ flow, tìm path yếu, viết finding thành quyết định product. |
 | `02-group-spec/` | Bộ template cho phần nhóm: gom bằng chứng, chuyển evidence thành insight/opportunity/build slice, và viết thin SPEC cuối Day 05. |
 

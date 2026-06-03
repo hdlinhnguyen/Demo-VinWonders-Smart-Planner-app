@@ -4,10 +4,10 @@ Thin SPEC không phải PRD đầy đủ. Đây là bản cam kết đủ rõ đ
 
 ## 1. Track, product/app và user
 
-**Track:**  
-**Product/app thật:**  
-**User cụ thể:**  
-**Nhóm có phải user thật không? Nếu không, khác ở đâu?**  
+**Track:**  Travel & Hospitality
+**Product/app thật:**  Lập lịch trình tham quan khám phá VinWonders (Vinpearl & Safari)
+**User cụ thể:**  Khách đi VinWonders, đặc biệt là nhóm gia đình có trẻ em và người lớn tuổi, muốn có lịch trình cá nhân hóa theo mốc giờ để tối ưu trải nghiệm trong công viên.
+**Nhóm có phải user thật không? Nếu không, khác ở đâu?**  Nhóm này là user thật, dựa trên nhu cầu phổ biến của khách tham quan VinWonders. Tuy nhiên, trong prototype, chúng ta sẽ giả định thông tin đầu vào để tập trung vào việc tạo lịch trình cá nhân hóa, thay vì thu thập dữ liệu thực tế từ user.
 
 ## 2. Evidence summary
 
@@ -20,10 +20,7 @@ Thin SPEC không phải PRD đầy đủ. Đây là bản cam kết đủ rõ đ
 ## 3. Pain statement
 
 ```text
-User [ai] đang gặp khó ở [bước/workflow],
-vì [nguyên nhân hoặc điểm gãy],
-dẫn tới [hậu quả].
-Bằng chứng chính là [quote/screenshot/review/observation].
+Khách hàng đi VinWonders thường gặp khó khăn trong việc lên lịch trình tham quan cá nhân hóa, đặc biệt là khi đi cùng nhóm gia đình có trẻ em và người lớn tuổi. Họ phải tự tìm hiểu và sắp xếp các hoạt động phù hợp với sở thích và giới hạn của từng thành viên, dẫn đến mất thời gian và trải nghiệm không tối ưu. Bằng chứng chính là nhiều review trên các trang du lịch phàn nàn về việc khó khăn trong việc lên kế hoạch tham quan hiệu quả tại VinWonders.
 ```
 
 ## 4. Build slice

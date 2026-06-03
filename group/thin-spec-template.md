@@ -46,23 +46,85 @@ Chọn một:
 **Lý do chọn:**  
 **Human role:** reviewer / decider / trainer / rescuer / none  
 
+Thay **phần 7** bằng đoạn dưới. Cấu trúc vẫn theo template Thin SPEC. 
+
 ## 6. Four paths
 
-| Path | Prototype phải thể hiện gì? |
-|---|---|
-| Happy |  |
-| Low-confidence |  |
-| Failure |  |
-| Correction |  |
+| Path           | Prototype phải thể hiện gì?                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Happy          | User nhập đủ thông tin. AI tạo lịch trình cá nhân hóa trong VinWonders Phú Quốc theo mốc giờ, gồm khu vui chơi, show, điểm ăn uống, thời gian nghỉ và lý do gợi ý. |
+| Low-confidence | User nhập thiếu dữ liệu. AI không tạo lịch trình ngay, mà hỏi lại thời gian vào/ra, nhóm đi cùng, sở thích và giới hạn sức khỏe/độ tuổi.                           |
+| Failure        | AI gợi ý hoạt động không phù hợp. Prototype phải đánh dấu hoạt động cần kiểm tra điều kiện và cho user thay thế nhanh.                                             |
+| Correction     | User sửa lịch trình. AI cập nhật lại toàn bộ lịch trình trong VinWonders Phú Quốc và giữ ràng buộc mới trong phiên hiện tại.                                       |
+
+### 6.1. Happy path
+
+```mermaid
+flowchart TD
+    A[User nhập đủ thông tin: đi VinWonders Phú Quốc từ 9h-20h, 2 người lớn + 1 trẻ 8 tuổi, thích show, thủy cung, trò nhẹ] --> B[AI nhận diện task: tạo lịch trình trong VinWonders Phú Quốc]
+    B --> C[AI lọc hoạt động phù hợp với nhóm gia đình]
+    C --> D[AI khóa các mốc giờ show và hoạt động cố định]
+    D --> E[AI sắp xếp thứ tự khu vui chơi, điểm ăn uống, thời gian nghỉ]
+    E --> F[AI tạo lịch trình theo từng mốc giờ trong VinWonders Phú Quốc]
+    F --> G[User xem lịch trình và chọn dùng]
+```
+
+### 6.2. Low-confidence path
+
+```mermaid
+flowchart TD
+    A[User nhập thiếu: Lên lịch trình VinWonders Phú Quốc cho tôi] --> B[AI phát hiện thiếu dữ liệu quan trọng]
+    B --> C{Đủ dữ liệu để tạo lịch trình chưa?}
+    C -->|Chưa đủ| D[AI hỏi lại]
+    D --> E[User vào công viên lúc mấy giờ?]
+    D --> F[User rời công viên lúc mấy giờ?]
+    D --> G[User đi cùng ai: một mình, nhóm bạn, gia đình có trẻ em, người lớn tuổi?]
+    D --> H[User thích show, trò nhẹ, thủy cung hay trò cảm giác mạnh?]
+    E --> I[User bổ sung thông tin]
+    F --> I
+    G --> I
+    H --> I
+    I --> J[AI tạo lịch trình cá nhân hóa trong VinWonders Phú Quốc]
+```
+
+### 6.3. Failure path
+
+```mermaid
+flowchart TD
+    A[AI tạo lịch trình VinWonders Phú Quốc] --> B[AI gợi ý hoạt động không phù hợp]
+    B --> C[Ví dụ: gợi ý trò cảm giác mạnh cho gia đình có trẻ nhỏ hoặc người lớn tuổi]
+    C --> D[Prototype đánh dấu hoạt động cần kiểm tra điều kiện]
+    D --> E[User chọn Không phù hợp]
+    E --> F[AI loại hoạt động sai khỏi lịch trình]
+    F --> G[AI thay bằng hoạt động nhẹ hơn hoặc show phù hợp hơn]
+    G --> H[AI cập nhật lại lịch trình trong VinWonders Phú Quốc]
+```
+
+### 6.4. Correction path
+
+```mermaid
+flowchart TD
+    A[User sửa: Bỏ trò cảm giác mạnh, ưu tiên show và khu trong nhà] --> B[AI ghi nhận constraint mới trong phiên]
+    B --> C[AI lọc lại hoạt động trong VinWonders Phú Quốc]
+    C --> D[AI tính lại thứ tự di chuyển và thời gian nghỉ]
+    D --> E[AI cập nhật lịch trình theo mốc giờ]
+    E --> F[User xem lịch trình mới]
+    F --> G[AI không tiếp tục gợi ý trò cảm giác mạnh trong phiên hiện tại]
+```
 
 ## 7. Failure mode nguy hiểm nhất
 
 ```text
-Nếu user [trigger],
-AI có thể [failure],
-hậu quả là [impact].
-Prototype sẽ xử lý bằng [ask again / show source / human review / undo / fallback].
-Owner kiểm thử path này là [tên thành viên].
+Nếu user đi VinWonders Phú Quốc cùng trẻ em, người lớn tuổi hoặc người có giới hạn sức khỏe,
+AI có thể gợi ý hoạt động không phù hợp về độ tuổi, chiều cao, sức khỏe hoặc mức độ mạo hiểm,
+hậu quả là user mất thời gian di chuyển đến khu không chơi được, lịch trình bị vỡ, trải nghiệm giảm, thậm chí có rủi ro an toàn.
+Prototype sẽ xử lý bằng ask again + constraint filter + warning label:
+- hỏi nhóm đi cùng trước khi tạo lịch trình,
+- hỏi mức độ muốn chơi trò cảm giác mạnh,
+- ưu tiên hoạt động phù hợp với trẻ em/người lớn tuổi nếu có,
+- gắn nhãn "cần kiểm tra điều kiện" với trò có ràng buộc,
+- cho phép user bấm "không phù hợp" để AI thay thế nhanh bằng hoạt động khác trong VinWonders Phú Quốc.
+Owner kiểm thử path này là [Tên thành viên phụ trách test/failure path].
 ```
 
 ## 8. Owner plan cho sáng Day 06

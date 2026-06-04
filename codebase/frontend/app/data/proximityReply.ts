@@ -1,5 +1,6 @@
 import { nearestLocationIdAt } from "./routeGraph";
 import {
+  getAnchorAtPoint,
   getNearestByType,
   getNearestLocations,
   type LocationDistance,
@@ -64,11 +65,11 @@ function nearestByTypeForVisit(
 }
 
 function standingAtMessage(x: number, y: number): string | null {
-  const anchorId = nearestLocationIdAt(x, y);
-  if (!anchorId) return null;
-  const nearest = getNearestLocations(x, y, 1)[0];
-  if (!nearest || nearest.routeDistance >= AT_LOCATION_THRESHOLD) return null;
-  return `Bạn đang **rất gần / tại** **${nearest.name}** (${nearest.zone}).\n\n`;
+  const anchor = getAnchorAtPoint(x, y);
+  if (!anchor || anchor.routeDistance >= AT_LOCATION_THRESHOLD) return null;
+  return (
+    `Bạn đang **rất gần / tại** **${anchor.name}** (${anchor.zone}, ${anchor.typeLabel}).\n\n`
+  );
 }
 
 export function buildProximityReply(
@@ -80,9 +81,11 @@ export function buildProximityReply(
   let primary: LocationDistance | null = null;
 
   if (intent === "nearest_overall") {
-    const standing = standingAtMessage(x, y);
-    const nearest = getNearestLocations(x, y, 1)[0];
-    if (!nearest) {
+    const anchor = getAnchorAtPoint(x, y);
+    const ranked = getNearestLocations(x, y, 5);
+    const routeNearest = ranked[0];
+
+    if (!anchor && !routeNearest) {
       return {
         text:
           lines.join("") +
@@ -90,14 +93,39 @@ export function buildProximityReply(
         suggestNav: null,
       };
     }
-    primary = nearest;
+
+    const standing = standingAtMessage(x, y);
     if (standing) lines.push(standing);
-    lines.push(
-      `**Địa điểm gần chấm xanh nhất (theo route):**\n\n`,
-      formatItem(nearest),
-      `\n\n**Top 3 gần nhất:**\n\n`,
-      ...getNearestLocations(x, y, 3).map((item, i) => formatItem(item, i + 1))
-    );
+
+    if (anchor) {
+      lines.push(
+        `**Địa điểm gắn vị trí của bạn trên bản đồ:**\n\n`,
+        formatItem(anchor),
+        `   _(Chấm xanh đang ở ~${Math.round(anchor.routeDistance)} đv từ điểm này.)_\n\n`
+      );
+      primary = anchor;
+    }
+
+    if (
+      routeNearest &&
+      (!anchor || routeNearest.id !== anchor.id)
+    ) {
+      lines.push(
+        `**Địa điểm gần nhất theo đường đi trong công viên (route):**\n\n`,
+        formatItem(routeNearest)
+      );
+      if (!primary) primary = routeNearest;
+    } else if (routeNearest && !primary) {
+      primary = routeNearest;
+    }
+
+    const topList = ranked
+      .filter((item) => item.id !== anchor?.id)
+      .slice(0, 3);
+    if (topList.length > 0) {
+      lines.push(`\n\n**Các địa điểm khác gần bạn (route):**\n\n`);
+      topList.forEach((item, i) => lines.push(formatItem(item, i + 1)));
+    }
   } else {
     const type = intentToLocationType(intent);
     if (!type) {

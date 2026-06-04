@@ -21,7 +21,7 @@ export default function ChatSpotCardCompact({
   const { spot, scheduleTime } = entry;
 
   return (
-    <article className="flex gap-3 rounded-xl border border-white/70 bg-white/88 p-2.5 shadow-sm backdrop-blur-sm">
+    <article className="flex gap-3 rounded-xl border border-border bg-surface p-2.5 shadow-sm">
       <button
         type="button"
         onClick={onShowOnMap}

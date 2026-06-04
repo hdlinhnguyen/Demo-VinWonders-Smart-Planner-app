@@ -729,7 +729,7 @@ export default function ChatInterface() {
       }
     >
       {/* ── Left: Chat panel — kéo cạnh phải để resize (desktop) ── */}
-      <section className="glass-panel relative flex min-h-0 w-full min-w-0 flex-col border-r lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
+      <section className="glass-panel relative flex min-h-0 w-full min-w-0 flex-col border-r border-border bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
         {/* Logo */}
         <header className="flex items-center justify-between px-5 py-4">
           <span className="text-xl font-bold tracking-tight">
@@ -841,7 +841,7 @@ export default function ChatInterface() {
                     onSwapItem={handleSwapActivity}
                   />
                 ) : (
-                  <p className="ml-auto max-w-[85%] rounded-2xl border border-white/50 bg-white/80 px-4 py-2.5 text-sm font-medium leading-relaxed text-foreground shadow-sm backdrop-blur-sm">
+                  <p className="ml-auto max-w-[85%] rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm font-medium leading-relaxed text-foreground shadow-sm">
                     {m.content}
                   </p>
                 )}
@@ -903,9 +903,9 @@ export default function ChatInterface() {
         </div>
 
         {/* Composer — Layla "Ask anything..." */}
-        <footer className="border-t border-white/40 bg-white/40 px-4 py-4 backdrop-blur-md">
+        <footer className="border-t border-border bg-surface px-4 py-4">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
               <textarea
                 ref={textareaRef}
                 value={input}

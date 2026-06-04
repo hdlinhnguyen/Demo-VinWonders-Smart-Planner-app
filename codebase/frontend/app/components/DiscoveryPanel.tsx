@@ -87,7 +87,7 @@ export default function DiscoveryPanel({
       )}
 
       <aside
-        className={`glass-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
+        className={`glass-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-border bg-surface transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >

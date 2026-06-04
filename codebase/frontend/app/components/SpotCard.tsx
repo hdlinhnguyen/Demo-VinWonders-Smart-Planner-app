@@ -24,7 +24,7 @@ export default function SpotCard({
   compact = false,
 }: SpotCardProps) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-[0_2px_16px_rgba(0,0,0,0.06)] ring-1 ring-black/5 backdrop-blur-sm animate-in">
+    <article className="group overflow-hidden rounded-2xl border border-border bg-surface shadow-sm animate-in">
       <button
         type="button"
         onClick={onShowOnMap}

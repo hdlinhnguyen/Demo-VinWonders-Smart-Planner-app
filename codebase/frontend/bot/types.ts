@@ -4,4 +4,9 @@ export interface ChatMessage {
   role: ChatRole;
   content: string;
 }
-export type PathType = "happy" | "low-confidence" | "failure" | "correction";
+export type PathType =
+  | "general"
+  | "happy"
+  | "low-confidence"
+  | "failure"
+  | "correction";

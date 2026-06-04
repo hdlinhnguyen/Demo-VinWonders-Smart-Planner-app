@@ -1,6 +1,7 @@
 import { buildHallucinationControlBlock } from "@/app/data/hallucinationControl";
 import {
   VINWONDERS_SYSTEM_PROMPT,
+  GENERAL_CHAT_PROMPT,
   HAPPY_PATH_PROMPT,
   LOW_CONFIDENCE_PROMPT,
   FAILURE_PATH_PROMPT,
@@ -10,6 +11,8 @@ import type { ChatMessage, PathType } from "./types";
 
 function selectPrompt(pathType: PathType): string {
   switch (pathType) {
+    case "general":
+      return GENERAL_CHAT_PROMPT;
     case "happy":
       return HAPPY_PATH_PROMPT;
     case "low-confidence":

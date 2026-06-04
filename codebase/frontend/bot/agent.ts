@@ -43,12 +43,13 @@ export async function runAgentStream(
         )
       : undefined;
 
-  // Append JSON demand directly to last user message for itinerary paths
-  const needsItinerary = pathType === "happy" || pathType === "failure" || pathType === "correction";
+  // JSON lịch trình chỉ khi tạo / sửa / cập nhật lịch trình — không ép ở tư vấn chung
+  const needsItineraryJson =
+    pathType === "happy" || pathType === "failure" || pathType === "correction";
   const augmented = messages.map((m, i) => {
     if (i !== messages.length - 1 || m.role !== "user") return m;
     let content = m.content;
-    if (needsItinerary) content += ITINERARY_SUFFIX;
+    if (needsItineraryJson) content += ITINERARY_SUFFIX;
     if (savedAugment) content += savedAugment;
     return content === m.content ? m : { ...m, content };
   });

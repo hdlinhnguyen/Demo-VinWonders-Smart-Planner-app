@@ -81,10 +81,9 @@ export function checkConstraintCompleteness(c: TripConstraints): { ok: boolean; 
 }
 
 export function detectPath(messages: ChatMessage[]): PathType {
-  if (messages.length === 0) return "happy";
+  if (messages.length === 0) return "general";
 
   const lastUser = [...messages].reverse().find(m => m.role === "user")?.content.toLowerCase() ?? "";
-  const fullText = messages.map(m => m.content).join(" ").toLowerCase();
 
   // Failure: user marks an activity as not suitable
   if (/không phù hợp|không chơi được|đổi trò|cần thay|không được chơi|thay (trò|hoạt động)/.test(lastUser)) {
@@ -102,9 +101,15 @@ export function detectPath(messages: ChatMessage[]): PathType {
     return "correction";
   }
 
-  // Check if itinerary creation is requested
-  const wantsItinerary = /lịch trình|lên kế hoạch|lên lịch|đi chơi cả ngày|tham quan|chơi từ|lịch.*ngày/.test(fullText);
-  if (!wantsItinerary) return "happy";
+  // Chỉ tin **câu user hiện tại** — tránh ép JSON vì đã hỏi lịch trình từ trước
+  const wantsItinerary =
+    /lịch trình|lên kế hoạch|lên lịch|đi chơi cả ngày|tham quan cả ngày|chơi từ|lịch.*ngày|kế hoạch.*ngày/.test(
+      lastUser
+    ) ||
+    (hasPriorItinerary &&
+      /cập nhật lịch|đổi lịch|chỉnh lịch|sửa lịch|thêm.*lịch/.test(lastUser));
+
+  if (!wantsItinerary) return "general";
 
   const constraints = extractConstraints(messages);
   const { ok } = checkConstraintCompleteness(constraints);

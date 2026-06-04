@@ -82,6 +82,19 @@ export function useRouteSimulation() {
     (destinationId: string, autoStart = true) => {
       setIsMoving(false);
       setPathError(null);
+      setNavigationTarget(null);
+
+      const idleAtUser: SimulationTrip = {
+        waypoints: [{ x: position.x, y: position.y }],
+        pathLocationIds: [],
+        destinationId: null,
+        destinationName: originLabelFromPosition(position),
+        originLabel: originLabelFromPosition(position),
+        routeId: null,
+      };
+      tripRef.current = idleAtUser;
+      syncFromTrip(1, false);
+
       const trip = tripFromLocationId(
         { x: position.x, y: position.y },
         originLabelFromPosition(position),
@@ -98,7 +111,7 @@ export function useRouteSimulation() {
       }
       setTrip(trip, 0, autoStart);
     },
-    [position, setTrip]
+    [position, setTrip, syncFromTrip]
   );
 
   const goToCoords = useCallback(
@@ -193,16 +206,27 @@ export function useRouteSimulation() {
 
   const previewNavigation = useCallback(
     (destinationId: string, destinationName: string) => {
-      setNavigationTarget({ id: destinationId, name: destinationName });
       setPathError(null);
       setIsMoving(false);
+      setNavigationTarget(null);
+
+      const idleAtUser: SimulationTrip = {
+        waypoints: [{ x: position.x, y: position.y }],
+        pathLocationIds: [],
+        destinationId: null,
+        destinationName: originLabelFromPosition(position),
+        originLabel: originLabelFromPosition(position),
+        routeId: null,
+      };
+      tripRef.current = idleAtUser;
+      syncFromTrip(1, false);
+
       const trip = tripFromLocationId(
         { x: position.x, y: position.y },
         originLabelFromPosition(position),
         destinationId
       );
       if (!trip) {
-        setNavigationTarget(null);
         const dest = getLocationById(destinationId);
         setPathError(
           dest
@@ -211,16 +235,31 @@ export function useRouteSimulation() {
         );
         return false;
       }
+      setNavigationTarget({ id: destinationId, name: destinationName });
       setTrip(trip, 0, false);
       return true;
     },
-    [position, setTrip]
+    [position, setTrip, syncFromTrip]
   );
 
   const startNavigation = useCallback(
     (destinationId: string, destinationName: string) => {
-      setNavigationTarget({ id: destinationId, name: destinationName });
       setPathError(null);
+      setIsMoving(false);
+      setNavigationTarget(null);
+
+      const idleAtUser: SimulationTrip = {
+        waypoints: [{ x: position.x, y: position.y }],
+        pathLocationIds: [],
+        destinationId: null,
+        destinationName: originLabelFromPosition(position),
+        originLabel: originLabelFromPosition(position),
+        routeId: null,
+      };
+      tripRef.current = idleAtUser;
+      syncFromTrip(1, false);
+
+      setNavigationTarget({ id: destinationId, name: destinationName });
       const trip = tripFromLocationId(
         { x: position.x, y: position.y },
         originLabelFromPosition(position),
@@ -239,7 +278,7 @@ export function useRouteSimulation() {
       setTrip(trip, 0, true);
       return true;
     },
-    [position, setTrip]
+    [position, setTrip, syncFromTrip]
   );
 
   const resetToStart = useCallback(() => {

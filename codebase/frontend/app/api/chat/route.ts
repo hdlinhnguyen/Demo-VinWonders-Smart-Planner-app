@@ -2,6 +2,7 @@ import {
   handleChat,
   parseLastReplyPosition,
   parseMessages,
+  parseSavedItinerary,
   parseUserPosition,
 } from "@/api/chat";
 import { NextRequest } from "next/server";
@@ -19,5 +20,6 @@ export async function POST(req: NextRequest) {
   const messages = parseMessages(body);
   const userPosition = parseUserPosition(body);
   const lastReplyPosition = parseLastReplyPosition(body);
-  return handleChat(messages, userPosition, lastReplyPosition);
+  const savedItinerary = parseSavedItinerary(body);
+  return handleChat(messages, userPosition, lastReplyPosition, savedItinerary);
 }

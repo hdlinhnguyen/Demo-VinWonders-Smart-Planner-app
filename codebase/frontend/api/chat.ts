@@ -1,3 +1,7 @@
+import {
+  prepareMessagesForLLM,
+  validateUserMessage,
+} from "@/bot/chatLimits";
 import { mapProviderError } from "@/bot/errors";
 import { streamOpenRouterReply } from "@/bot/openrouter";
 import type { ChatMessage } from "@/bot/types";
@@ -23,10 +27,13 @@ export function parseMessages(body: unknown): ChatMessage[] {
         typeof (m as ChatMessage).content === "string" &&
         ["user", "assistant"].includes((m as ChatMessage).role)
     )
-    .map((m) => ({
-      role: m.role,
-      content: m.content.trim(),
-    }))
+    .map((m) => {
+      if (m.role === "user") {
+        const v = validateUserMessage(m.content);
+        return { role: m.role, content: v.ok ? v.content : "" };
+      }
+      return { role: m.role, content: m.content.trim() };
+    })
     .filter((m) => m.content.length > 0);
 }
 
@@ -80,7 +87,13 @@ export async function handleChat(
     );
   }
 
-  const proximityIntent = detectProximityIntent(last.content);
+  const lastValidation = validateUserMessage(last.content);
+  if (!lastValidation.ok) {
+    return Response.json({ error: lastValidation.error }, { status: 400 });
+  }
+  const lastUserContent = lastValidation.content;
+
+  const proximityIntent = detectProximityIntent(lastUserContent);
   if (proximityIntent) {
     if (!userPosition) {
       return Response.json({
@@ -101,8 +114,20 @@ export async function handleChat(
     ? buildFullUserLocationContext(userPosition)
     : undefined;
 
+  const llmMessages = prepareMessagesForLLM(
+    messages.map((m, i) =>
+      i === messages.length - 1 && m.role === "user"
+        ? { role: "user", content: lastUserContent }
+        : m
+    )
+  );
+
   const encoder = new TextEncoder();
-  const generator = streamOpenRouterReply(messages, undefined, positionContext);
+  const generator = streamOpenRouterReply(
+    llmMessages,
+    undefined,
+    positionContext
+  );
 
   let first: IteratorResult<string, void>;
   try {

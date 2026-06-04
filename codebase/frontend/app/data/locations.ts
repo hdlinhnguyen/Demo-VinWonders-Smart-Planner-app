@@ -238,8 +238,8 @@ export function buildLocationsContext(): string {
     for (const loc of items) {
       lines.push(
         `- **${loc.name}** [${loc.typeLabel}]`,
-        `  ${loc.shortSummary ?? loc.description.slice(0, 180)}`,
-        `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 6).join(", ")}`
+        `  ${loc.shortSummary ?? loc.description.slice(0, 100)}`,
+        `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 4).join(", ")}`
       );
     }
   }

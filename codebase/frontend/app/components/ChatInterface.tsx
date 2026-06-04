@@ -20,6 +20,13 @@ import {
   navDeclineReply,
 } from "../data/navConfirmation";
 import {
+  CHAT_LIMITS,
+  countWords,
+  normalizeUserInput,
+  prepareMessagesForLLM,
+  validateUserMessage,
+} from "@/bot/chatLimits";
+import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
   WELCOME_MESSAGE,
@@ -52,6 +59,7 @@ function renderMarkdown(text: string) {
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
+  const [inputError, setInputError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
@@ -150,13 +158,20 @@ export default function ChatInterface() {
   }
 
   async function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || isLoading) return;
+    if (isLoading) return;
 
-    setLastQuery(trimmed);
+    const validation = validateUserMessage(text);
+    if (!validation.ok) {
+      setInputError(validation.error);
+      return;
+    }
+    const content = validation.content;
+    setInputError(null);
+
+    setLastQuery(content);
     setDiscoveryOpen(true);
 
-    if (pendingNavSuggestion && isNavConfirm(trimmed)) {
+    if (pendingNavSuggestion && isNavConfirm(content)) {
       const { id, name } = pendingNavSuggestion;
       setPendingNavSuggestion(null);
       setInput("");
@@ -167,14 +182,14 @@ export default function ChatInterface() {
     const userMsg: Message = {
       id: createId(),
       role: "user",
-      content: trimmed,
+      content,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
     if (pendingNavSuggestion) {
-      if (isNavDecline(trimmed)) {
+      if (isNavDecline(content)) {
         setPendingNavSuggestion(null);
         setMessages((prev) => [
           ...prev,
@@ -190,7 +205,11 @@ export default function ChatInterface() {
       setPendingNavSuggestion(null);
     }
 
-    const history = [...messages, userMsg].filter((m) => m.id !== "welcome");
+    const history = prepareMessagesForLLM(
+      [...messages, userMsg]
+        .filter((m) => m.id !== "welcome")
+        .map(({ role, content }) => ({ role, content }))
+    );
 
     setIsLoading(true);
 
@@ -202,7 +221,7 @@ export default function ChatInterface() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: history.map(({ role, content }) => ({ role, content })),
+          messages: history,
           userPosition: {
             ...livePosition,
             updatedAt: Date.now(),
@@ -310,6 +329,16 @@ export default function ChatInterface() {
       sendMessage(input);
     }
   }
+
+  function handleInputChange(value: string) {
+    setInput(normalizeUserInput(value));
+    if (inputError) setInputError(null);
+  }
+
+  const inputWordCount = countWords(input);
+  const showInputHint =
+    inputWordCount >= CHAT_LIMITS.warnUserMessageWords ||
+    inputWordCount >= CHAT_LIMITS.maxUserMessageWords - 10;
 
   function handleNavConfirm() {
     if (!pendingNavSuggestion || isLoading) return;
@@ -436,10 +465,12 @@ export default function ChatInterface() {
               <textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => handleInputChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={1}
-                placeholder="Hỏi bất cứ điều gì..."
+                aria-invalid={!!inputError}
+                aria-describedby="chat-input-hint"
+                placeholder="Hỏi ngắn gọn (vd: trạm y tế gần nhất)..."
                 className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-sm outline-none placeholder:text-muted"
               />
               <div className="flex shrink-0 items-center gap-1 pb-0.5">
@@ -461,7 +492,27 @@ export default function ChatInterface() {
               </div>
             </div>
           </form>
-          <p className="mt-2 text-center text-[10px] text-muted">
+          <div
+            id="chat-input-hint"
+            className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-0.5 text-[10px]"
+          >
+            <span className={inputError ? "text-red-600" : "text-muted"}>
+              {inputError ??
+                `Tối đa ${CHAT_LIMITS.maxUserMessageWords} từ · ${CHAT_LIMITS.maxHistoryMessages} tin gần nhất gửi AI`}
+            </span>
+            {showInputHint && !inputError && (
+              <span
+                className={
+                  inputWordCount >= CHAT_LIMITS.maxUserMessageWords
+                    ? "text-orange-600"
+                    : "text-muted"
+                }
+              >
+                {inputWordCount}/{CHAT_LIMITS.maxUserMessageWords} từ
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-center text-[10px] text-muted">
             Thông tin tham khảo · Kiểm tra giá vé chính thức trước khi đi
           </p>
         </footer>

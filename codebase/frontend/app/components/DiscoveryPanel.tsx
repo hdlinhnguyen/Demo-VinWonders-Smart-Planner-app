@@ -33,6 +33,10 @@ interface DiscoveryPanelProps {
   /** Focus map từ chat card (controlled) */
   focusSpotId?: string | null;
   onFocusSpot?: (id: string) => void;
+  /** Khung giờ lịch trình từ chat (card lớn trên list) */
+  scheduleTimesBySpotId?: Record<string, string>;
+  listCaption?: string;
+  onDestinationSelect?: (locationId: string) => void;
 }
 
 export default function DiscoveryPanel({
@@ -58,6 +62,9 @@ export default function DiscoveryPanel({
   onUseRoute,
   focusSpotId,
   onFocusSpot,
+  scheduleTimesBySpotId = {},
+  listCaption,
+  onDestinationSelect,
 }: DiscoveryPanelProps) {
   const [internalFocusId, setInternalFocusId] = useState<string | null>(null);
   const focusId = focusSpotId ?? internalFocusId;
@@ -80,7 +87,7 @@ export default function DiscoveryPanel({
       )}
 
       <aside
-        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-surface transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
+        className={`glass-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
@@ -125,18 +132,21 @@ export default function DiscoveryPanel({
           onGoToLocation={onGoToLocation}
           onTeleport={onTeleport}
           onUseRoute={onUseRoute}
+          onDestinationSelect={onDestinationSelect}
         />
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="scroll-area flex-1 overflow-y-auto p-4 lg:max-w-sm lg:border-r lg:border-border">
-            <p className="mb-3 text-xs text-muted">
-              {spots.length} kết quả · dữ liệu từ mock_data
+            <p className="mb-3 text-xs text-[var(--muted-soft)]">
+              {listCaption ??
+                `${spots.length} kết quả · dữ liệu từ mock_data`}
             </p>
             <div className="space-y-4">
               {spots.map((spot) => (
                 <SpotCard
                   key={spot.id}
                   spot={spot}
+                  scheduleTime={scheduleTimesBySpotId[spot.id]}
                   selected={selectedIds.has(spot.id)}
                   onToggle={() => onToggleSpot(spot)}
                   onShowOnMap={() => focusSpot(spot.id)}
@@ -147,8 +157,8 @@ export default function DiscoveryPanel({
                 />
               ))}
               {spots.length === 0 && (
-                <p className="py-8 text-center text-sm text-muted">
-                  Không tìm thấy địa điểm phù hợp. Thử hỏi chatbot nhé.
+                <p className="py-8 text-center text-sm text-[var(--muted-soft)]">
+                  Chưa có gợi ý. Đổi đích đến hoặc hỏi chatbot lịch trình nhé.
                 </p>
               )}
             </div>

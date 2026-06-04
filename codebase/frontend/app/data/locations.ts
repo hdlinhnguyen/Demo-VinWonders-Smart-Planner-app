@@ -164,7 +164,7 @@ export function getLocationById(id: string): ParkLocation | undefined {
 
 export function filterSpotsByText(text: string, spots: Spot[] = ALL_SPOTS): Spot[] {
   const t = text.toLowerCase().trim();
-  if (!t) return spots.slice(0, 12);
+  if (!t) return [];
 
   const matched = spots.filter(
     (s) => {

@@ -1,5 +1,7 @@
 import { streamLLMReply } from "./provider";
+import { buildSavedItineraryUserAugment } from "./savedItineraryAgent";
 import { detectPath } from "./tools";
+import type { ItineraryItem } from "./tools";
 import { prepareMessagesForLLM } from "@/bot/chatLimits";
 import type { ChatMessage, PathType } from "./types";
 import { mapProviderError } from "./errors";
@@ -27,19 +29,28 @@ Quy tắc JSON:
 
 export async function runAgentStream(
   messages: ChatMessage[],
-  positionContext?: string
+  positionContext?: string,
+  savedItinerary?: ItineraryItem[] | null
 ): Promise<AgentStreamResult> {
   const pathType = detectPath(messages);
 
+  const savedAugment =
+    savedItinerary && savedItinerary.length > 0
+      ? buildSavedItineraryUserAugment(
+          savedItinerary,
+          messages.filter((m) => m.role === "user").at(-1)?.content ?? ""
+        )
+      : undefined;
+
   // Append JSON demand directly to last user message for itinerary paths
   const needsItinerary = pathType === "happy" || pathType === "failure" || pathType === "correction";
-  const augmented = needsItinerary
-    ? messages.map((m, i) =>
-        i === messages.length - 1 && m.role === "user"
-          ? { ...m, content: m.content + ITINERARY_SUFFIX }
-          : m
-      )
-    : messages;
+  const augmented = messages.map((m, i) => {
+    if (i !== messages.length - 1 || m.role !== "user") return m;
+    let content = m.content;
+    if (needsItinerary) content += ITINERARY_SUFFIX;
+    if (savedAugment) content += savedAugment;
+    return content === m.content ? m : { ...m, content };
+  });
 
   const llmMessages = prepareMessagesForLLM(
     augmented.map(m => ({ role: m.role, content: m.content }))

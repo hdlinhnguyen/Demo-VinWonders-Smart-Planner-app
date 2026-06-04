@@ -1,7 +1,10 @@
+import type { ItineraryItem as BotItineraryItem } from "@/bot/tools";
+import { ALL_LOCATIONS, getLocationById } from "./locations";
 import type { Spot } from "./spots";
 
 export const STORAGE_ITINERARY = "vinwonders_itinerary";
 export const STORAGE_ITINERARY_SELECTION = "vinwonders_itinerary_selection";
+export const STORAGE_BOARD_ITINERARY = "vinwonders_saved_itinerary";
 
 export interface ItineraryItem {
   spotId: string;
@@ -114,4 +117,88 @@ export function toggleSelectedSpotId(spotId: string): Set<string> {
   else next.add(spotId);
   saveSelectedSpotIds(next);
   return next;
+}
+
+function scheduleToTime(scheduleTime?: string): string {
+  if (!scheduleTime) return "09:00";
+  const m = scheduleTime.match(/(\d{1,2}:\d{2})/);
+  return m ? m[1] : "09:00";
+}
+
+function loadBoardItinerary(): BotItineraryItem[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_BOARD_ITINERARY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    return parsed as BotItineraryItem[];
+  } catch {
+    return null;
+  }
+}
+
+/** Mọi spot id user đã + Chọn hoặc đã lưu lịch trình — không gợi ý lại */
+export function getExcludedSpotIds(): Set<string> {
+  const ids = loadSelectedSpotIds();
+  const saved = loadItinerary();
+  if (saved?.items) {
+    for (const it of saved.items) ids.add(it.spotId);
+  }
+  const board = loadBoardItinerary();
+  if (board) {
+    for (const it of board) {
+      const loc =
+        getLocationById(it.id) ??
+        ALL_LOCATIONS.find((l) => l.name === it.name);
+      if (loc) ids.add(loc.id);
+    }
+  }
+  return ids;
+}
+
+/** Gửi lên /api/chat — gộp lịch board + lịch card + mục đã chọn */
+export function buildSavedItineraryForApi(): BotItineraryItem[] | null {
+  const merged: BotItineraryItem[] = [];
+  const seenNames = new Set<string>();
+
+  const board = loadBoardItinerary();
+  if (board) {
+    for (const it of board) {
+      merged.push(it);
+      seenNames.add(it.name);
+    }
+  }
+
+  const card = loadItinerary();
+  if (card?.items) {
+    for (const it of card.items) {
+      if (seenNames.has(it.spotName)) continue;
+      seenNames.add(it.spotName);
+      merged.push({
+        id: it.spotId,
+        time: scheduleToTime(it.scheduleTime),
+        name: it.spotName,
+        reason: `Đã lưu · ${it.category}`,
+        durationMinutes: 30,
+        warning: null,
+      });
+    }
+  }
+
+  for (const spotId of loadSelectedSpotIds()) {
+    const loc = getLocationById(spotId);
+    if (!loc || seenNames.has(loc.name)) continue;
+    seenNames.add(loc.name);
+    merged.push({
+      id: loc.id,
+      time: "09:00",
+      name: loc.name,
+      reason: "User đã chọn (+ Chọn)",
+      durationMinutes: 30,
+      warning: null,
+    });
+  }
+
+  return merged.length > 0 ? merged : null;
 }

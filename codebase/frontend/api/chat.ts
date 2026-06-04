@@ -8,6 +8,10 @@ import type { ChatMessage } from "@/bot/types";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
+  buildMovedContextNote,
+  type PositionSnapshot,
+} from "@/app/data/positionChange";
+import {
   buildProximityReply,
   formatMissingPositionReply,
 } from "@/app/data/proximityReply";
@@ -52,6 +56,20 @@ export function parseUserPosition(body: unknown): SimulatedPosition | null {
   return p;
 }
 
+export function parseLastReplyPosition(body: unknown): PositionSnapshot | null {
+  if (!body || typeof body !== "object") return null;
+  const snap = (body as { lastReplyPosition?: unknown }).lastReplyPosition;
+  if (!snap || typeof snap !== "object") return null;
+  const s = snap as PositionSnapshot;
+  if (typeof s.x !== "number" || typeof s.y !== "number") return null;
+  return {
+    x: s.x,
+    y: s.y,
+    nearLocationId:
+      typeof s.nearLocationId === "string" ? s.nearLocationId : null,
+  };
+}
+
 function streamPlainText(text: string): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -70,7 +88,8 @@ function streamPlainText(text: string): Response {
 
 export async function handleChat(
   messages: ChatMessage[],
-  userPosition?: SimulatedPosition | null
+  userPosition?: SimulatedPosition | null,
+  lastReplyPosition?: PositionSnapshot | null
 ): Promise<Response> {
   if (messages.length === 0) {
     return Response.json(
@@ -110,9 +129,17 @@ export async function handleChat(
     });
   }
 
-  const positionContext = userPosition
+  let positionContext = userPosition
     ? buildFullUserLocationContext(userPosition)
     : undefined;
+  const movedNote = userPosition
+    ? buildMovedContextNote(lastReplyPosition, userPosition)
+    : undefined;
+  if (positionContext && movedNote) {
+    positionContext = `${positionContext}\n\n${movedNote}`;
+  } else if (!positionContext && movedNote) {
+    positionContext = movedNote;
+  }
 
   const llmMessages = prepareMessagesForLLM(
     messages.map((m, i) =>

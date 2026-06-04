@@ -1,4 +1,9 @@
-import { handleChat, parseMessages, parseUserPosition } from "@/api/chat";
+import {
+  handleChat,
+  parseLastReplyPosition,
+  parseMessages,
+  parseUserPosition,
+} from "@/api/chat";
 import { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
@@ -13,5 +18,6 @@ export async function POST(req: NextRequest) {
 
   const messages = parseMessages(body);
   const userPosition = parseUserPosition(body);
-  return handleChat(messages, userPosition);
+  const lastReplyPosition = parseLastReplyPosition(body);
+  return handleChat(messages, userPosition, lastReplyPosition);
 }

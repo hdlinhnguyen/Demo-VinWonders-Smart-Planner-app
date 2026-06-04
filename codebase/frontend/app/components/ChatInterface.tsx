@@ -27,6 +27,12 @@ import {
   validateUserMessage,
 } from "@/bot/chatLimits";
 import {
+  formatPositionMovedNotice,
+  shouldInvalidateStaleReply,
+  snapshotPosition,
+  type PositionSnapshot,
+} from "../data/positionChange";
+import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
   WELCOME_MESSAGE,
@@ -66,6 +72,9 @@ export default function ChatInterface() {
   const [lastQuery, setLastQuery] = useState("");
   const [pendingNavSuggestion, setPendingNavSuggestion] =
     useState<NavSuggestion | null>(null);
+  const [positionMovedNotice, setPositionMovedNotice] = useState<string | null>(
+    null
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width: chatWidth, startDrag } = useResizablePanel({
@@ -94,6 +103,15 @@ export default function ChatInterface() {
 
   const userPositionRef = useRef(userPosition);
   userPositionRef.current = userPosition;
+  const navigationTargetRef = useRef(navigationTarget);
+  navigationTargetRef.current = navigationTarget;
+  const positionAtLastReplyRef = useRef<PositionSnapshot | null>(null);
+  const prevPositionFrameRef = useRef<PositionSnapshot | null>(null);
+
+  function markReplyPosition() {
+    positionAtLastReplyRef.current = snapshotPosition(userPositionRef.current);
+    setPositionMovedNotice(null);
+  }
 
   const visibleSpots = useMemo(
     () => filterSpotsByText(lastQuery, VINWONDERS_SPOTS),
@@ -109,7 +127,38 @@ export default function ChatInterface() {
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, positionMovedNotice]);
+
+  useEffect(() => {
+    const prevFrame = prevPositionFrameRef.current;
+    const currentFrame = snapshotPosition(userPosition);
+    prevPositionFrameRef.current = currentFrame;
+
+    if (
+      !shouldInvalidateStaleReply(
+        positionAtLastReplyRef.current,
+        userPosition,
+        prevFrame
+      )
+    ) {
+      return;
+    }
+
+    setPendingNavSuggestion(null);
+    setPositionMovedNotice(formatPositionMovedNotice(userPosition));
+
+    const nav = navigationTargetRef.current;
+    if (nav) {
+      previewNavigation(nav.id, nav.name);
+    }
+  }, [
+    userPosition.x,
+    userPosition.y,
+    userPosition.isMoving,
+    userPosition.nearLocationId,
+    userPosition.nearLocationName,
+    previewNavigation,
+  ]);
 
   useEffect(() => {
     try {
@@ -167,6 +216,7 @@ export default function ChatInterface() {
     }
     const content = validation.content;
     setInputError(null);
+    setPositionMovedNotice(null);
 
     setLastQuery(content);
     setDiscoveryOpen(true);
@@ -226,6 +276,7 @@ export default function ChatInterface() {
             ...livePosition,
             updatedAt: Date.now(),
           },
+          lastReplyPosition: positionAtLastReplyRef.current,
         }),
       });
 
@@ -259,6 +310,7 @@ export default function ChatInterface() {
         } else {
           setPendingNavSuggestion(null);
         }
+        markReplyPosition();
         return;
       }
 
@@ -288,6 +340,7 @@ export default function ChatInterface() {
           );
         }
       }
+      markReplyPosition();
     } catch (err) {
       const msg =
         err instanceof Error
@@ -359,6 +412,8 @@ export default function ChatInterface() {
     setLastQuery("");
     setInput("");
     setPendingNavSuggestion(null);
+    setPositionMovedNotice(null);
+    positionAtLastReplyRef.current = null;
     cancelNavigation();
     try {
       localStorage.removeItem("vinwonders_chat_history");
@@ -420,6 +475,12 @@ export default function ChatInterface() {
               messages[messages.length - 1]?.role === "user" && (
                 <TypingIndicator />
               )}
+
+            {positionMovedNotice && !isLoading && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-950">
+                <PositionMovedNotice content={positionMovedNotice} />
+              </div>
+            )}
 
             {/* Quick chips — ngay dưới tin nhắn bot cuối (Layla behavior) */}
             {!isLoading && pendingNavSuggestion && (
@@ -572,6 +633,17 @@ export default function ChatInterface() {
         />
       </div>
     </div>
+  );
+}
+
+function PositionMovedNotice({ content }: { content: string }) {
+  return (
+    <div
+      className="chat-markdown"
+      dangerouslySetInnerHTML={{
+        __html: renderMarkdown(content).replace(/\n/g, "<br />"),
+      }}
+    />
   );
 }
 

@@ -12,6 +12,10 @@ npm install
 Tạo `frontend/.env` (hoặc `.env.local`) với:
 
 ```env
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+
+# Hoặc OpenRouter (khi không điền OPENAI_API_KEY)
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 OPENROUTER_MODEL=openai/gpt-4o-mini
 ```

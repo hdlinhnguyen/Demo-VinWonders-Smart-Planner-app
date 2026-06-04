@@ -3,7 +3,7 @@ import {
   validateUserMessage,
 } from "@/bot/chatLimits";
 import { mapProviderError } from "@/bot/errors";
-import { streamOpenRouterReply } from "@/bot/openrouter";
+import { streamLLMReply } from "@/bot/provider";
 import type { ChatMessage, PathType } from "@/bot/types";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
@@ -179,12 +179,7 @@ export async function handleChat(
 
   const pathType = detectPathType(messages);
   const encoder = new TextEncoder();
-  const generator = streamOpenRouterReply(
-    llmMessages,
-    undefined,
-    positionContext,
-    pathType
-  );
+  const generator = streamLLMReply(llmMessages, positionContext, pathType);
 
   let first: IteratorResult<string, void>;
   try {
@@ -197,7 +192,7 @@ export async function handleChat(
 
   if (first.done) {
     return Response.json(
-      { error: "OpenRouter không trả về nội dung" },
+      { error: "LLM không trả về nội dung" },
       { status: 502 }
     );
   }

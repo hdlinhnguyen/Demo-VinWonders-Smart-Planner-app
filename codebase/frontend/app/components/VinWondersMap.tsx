@@ -234,11 +234,8 @@ export default function VinWondersMap({
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
     function onResize() {
-      map.invalidateSize();
+      mapRef.current?.invalidateSize();
     }
 
     window.addEventListener("resize", onResize);

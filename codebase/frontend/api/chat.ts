@@ -1,10 +1,11 @@
-import { validateUserMessage } from "@/bot/chatLimits";
+import {
+  prepareMessagesForLLM,
+  validateUserMessage,
+} from "@/bot/chatLimits";
 import { mapProviderError } from "@/bot/errors";
 import { runAgentStream } from "@/bot/agent";
 import type { ChatMessage } from "@/bot/types";
 import type { ItineraryItem } from "@/bot/tools";
-import { streamLLMReply } from "@/bot/provider";
-import type { ChatMessage, PathType } from "@/bot/types";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
@@ -79,7 +80,8 @@ export function parseSavedItinerary(body: unknown): ItineraryItem[] | null {
 
 function formatSavedItineraryContext(items: ItineraryItem[]): string {
   const lines = items.map(
-    (it) => `${it.time} – ${it.name}${it.warning ? ` [⚠️ ${it.warning}]` : ""} (${it.durationMinutes} phút): ${it.reason}`
+    (it) =>
+      `${it.time} – ${it.name}${it.warning ? ` [⚠️ ${it.warning}]` : ""} (${it.durationMinutes} phút): ${it.reason}`
   );
   return `## Lịch trình đã lưu của người dùng\n${lines.join("\n")}\nKhi người dùng hỏi về lịch trình này, hãy dùng thông tin trên làm cơ sở.`;
 }
@@ -154,44 +156,21 @@ export async function handleChat(
     )
   );
 
-  const pathType = detectPathType(messages);
-  const encoder = new TextEncoder();
-  const generator = streamLLMReply(llmMessages, positionContext, pathType);
-
   let agentResult: Awaited<ReturnType<typeof runAgentStream>>;
   try {
-    agentResult = await runAgentStream(agentMessages, positionContext);
+    agentResult = await runAgentStream(llmMessages, positionContext);
   } catch (err) {
     console.error("[api/chat]", err);
-    const { status, message } = mapProviderError(err);
+    const status =
+      err && typeof err === "object" && "status" in err
+        ? (err as { status: number }).status
+        : mapProviderError(err).status;
+    const message =
+      err instanceof Error ? err.message : mapProviderError(err).message;
     return Response.json({ error: message }, { status });
   }
 
-  if (first.done) {
-    return Response.json(
-      { error: "LLM không trả về nội dung" },
-      { status: 502 }
-    );
-  }
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      controller.enqueue(encoder.encode(first.value));
-      try {
-        for await (const chunk of generator) {
-          if (chunk) controller.enqueue(encoder.encode(chunk));
-        }
-        controller.close();
-      } catch (err) {
-        console.error("[api/chat] stream", err);
-        const { message } = mapProviderError(err);
-        controller.enqueue(encoder.encode(`\n\n⚠️ ${message}`));
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
+  return new Response(agentResult.stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",

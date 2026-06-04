@@ -164,7 +164,7 @@ export function getLocationById(id: string): ParkLocation | undefined {
 
 export function filterSpotsByText(text: string, spots: Spot[] = ALL_SPOTS): Spot[] {
   const t = text.toLowerCase().trim();
-  if (!t) return spots.slice(0, 12);
+  if (!t) return [];
 
   const matched = spots.filter(
     (s) => {
@@ -237,11 +237,20 @@ export function buildLocationsContext(): string {
     }
     for (const loc of items) {
       lines.push(
-        `- **${loc.name}** [${loc.typeLabel}]`,
-        `  ${loc.shortSummary ?? loc.description.slice(0, 180)}`,
-        `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 6).join(", ")}`
+        `- **${loc.name}** (id: \`${loc.id}\`) [${loc.typeLabel}]`,
+        `  ${loc.shortSummary ?? loc.description.slice(0, 100)}`,
+        `  Giờ (mock_data, từng điểm): ${loc.openingHours}`,
+        `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 4).join(", ")}`
       );
     }
   }
+
+  lines.push(
+    "",
+    "### Dữ liệu KHÔNG có trong mock_data (không được bịa)",
+    "- Giá vé, combo, khuyến mãi cụ thể (VNĐ).",
+    "- Lịch show / suất biểu diễn / giờ diễn cụ thể.",
+    "- Tình trạng hàng đợi realtime, đông vắn theo phút."
+  );
   return lines.join("\n");
 }

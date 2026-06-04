@@ -1,8 +1,35 @@
+import {
+  prepareMessagesForLLM,
+  validateUserMessage,
+} from "@/bot/chatLimits";
+import { checkChatSpam } from "@/bot/chatSpam";
 import { mapProviderError } from "@/bot/errors";
-import { streamOpenRouterReply } from "@/bot/openrouter";
+import { runAgentStream } from "@/bot/agent";
 import type { ChatMessage } from "@/bot/types";
+import {
+  buildDeterministicSavedItineraryReply,
+  buildSavedItineraryAgentContext,
+  detectSavedItineraryQuery,
+} from "@/bot/savedItineraryAgent";
+import type { ItineraryItem } from "@/bot/tools";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
+import {
+  buildMovedContextNote,
+  type PositionSnapshot,
+} from "@/app/data/positionChange";
+import {
+  buildHarmfulRequestRefusal,
+  detectHarmfulUserContent,
+} from "@/app/data/contentSafety";
+import {
+  buildUnverifiedInfoReply,
+  detectUnverifiedInfoRequest,
+} from "@/app/data/hallucinationControl";
+import {
+  buildUnsupportedParkReply,
+  detectOtherParkMention,
+} from "@/app/data/parkScope";
 import {
   buildProximityReply,
   formatMissingPositionReply,
@@ -23,10 +50,13 @@ export function parseMessages(body: unknown): ChatMessage[] {
         typeof (m as ChatMessage).content === "string" &&
         ["user", "assistant"].includes((m as ChatMessage).role)
     )
-    .map((m) => ({
-      role: m.role,
-      content: m.content.trim(),
-    }))
+    .map((m) => {
+      if (m.role === "user") {
+        const v = validateUserMessage(m.content);
+        return { role: m.role, content: v.ok ? v.content : "" };
+      }
+      return { role: m.role, content: m.content.trim() };
+    })
     .filter((m) => m.content.length > 0);
 }
 
@@ -45,11 +75,38 @@ export function parseUserPosition(body: unknown): SimulatedPosition | null {
   return p;
 }
 
-function streamPlainText(text: string): Response {
+export function parseClientId(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const id = (body as { clientId?: unknown }).clientId;
+  return typeof id === "string" && id.trim().length > 0 ? id.trim() : null;
+}
+
+export function parseLastReplyPosition(body: unknown): PositionSnapshot | null {
+  if (!body || typeof body !== "object") return null;
+  const snap = (body as { lastReplyPosition?: unknown }).lastReplyPosition;
+  if (!snap || typeof snap !== "object") return null;
+  const s = snap as PositionSnapshot;
+  if (typeof s.x !== "number" || typeof s.y !== "number") return null;
+  return {
+    x: s.x,
+    y: s.y,
+    nearLocationId:
+      typeof s.nearLocationId === "string" ? s.nearLocationId : null,
+  };
+}
+
+export function parseSavedItinerary(body: unknown): ItineraryItem[] | null {
+  if (!body || typeof body !== "object") return null;
+  const raw = (body as { savedItinerary?: unknown }).savedItinerary;
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  return raw as ItineraryItem[];
+}
+
+function streamTextResponse(content: string, pathType = "saved-itinerary"): Response {
   const encoder = new TextEncoder();
-  const stream = new ReadableStream({
+  const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      controller.enqueue(encoder.encode(text));
+      controller.enqueue(encoder.encode(content));
       controller.close();
     },
   });
@@ -57,13 +114,17 @@ function streamPlainText(text: string): Response {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",
+      "X-Path-Type": pathType,
     },
   });
 }
 
 export async function handleChat(
   messages: ChatMessage[],
-  userPosition?: SimulatedPosition | null
+  userPosition?: SimulatedPosition | null,
+  lastReplyPosition?: PositionSnapshot | null,
+  savedItinerary?: ItineraryItem[] | null,
+  clientKey = "anonymous"
 ): Promise<Response> {
   if (messages.length === 0) {
     return Response.json(
@@ -80,7 +141,47 @@ export async function handleChat(
     );
   }
 
-  const proximityIntent = detectProximityIntent(last.content);
+  const lastValidation = validateUserMessage(last.content);
+  if (!lastValidation.ok) {
+    return Response.json({ error: lastValidation.error }, { status: 400 });
+  }
+  const lastUserContent = lastValidation.content;
+
+  const spam = checkChatSpam(clientKey, lastUserContent);
+  if (!spam.ok) {
+    return Response.json(
+      { error: spam.error, retryAfterSec: spam.retryAfterSec },
+      { status: 429 }
+    );
+  }
+
+  if (detectHarmfulUserContent(lastUserContent)) {
+    return Response.json({
+      mode: "policy",
+      content: buildHarmfulRequestRefusal(),
+      suggestNav: null,
+    });
+  }
+
+  const unverified = detectUnverifiedInfoRequest(lastUserContent);
+  if (unverified) {
+    return Response.json({
+      mode: "unverified_info",
+      content: buildUnverifiedInfoReply(unverified),
+      suggestNav: null,
+    });
+  }
+
+  const otherPark = detectOtherParkMention(lastUserContent);
+  if (otherPark) {
+    return Response.json({
+      mode: "park_scope",
+      content: buildUnsupportedParkReply(otherPark),
+      suggestNav: null,
+    });
+  }
+
+  const proximityIntent = detectProximityIntent(lastUserContent);
   if (proximityIntent) {
     if (!userPosition) {
       return Response.json({
@@ -97,50 +198,66 @@ export async function handleChat(
     });
   }
 
-  const positionContext = userPosition
+  let positionContext = userPosition
     ? buildFullUserLocationContext(userPosition)
     : undefined;
+  const movedNote = userPosition
+    ? buildMovedContextNote(lastReplyPosition, userPosition)
+    : undefined;
+  if (positionContext && movedNote) {
+    positionContext = `${positionContext}\n\n${movedNote}`;
+  } else if (!positionContext && movedNote) {
+    positionContext = movedNote;
+  }
+  if (savedItinerary && savedItinerary.length > 0) {
+    const itineraryNote = buildSavedItineraryAgentContext(savedItinerary);
+    if (itineraryNote) {
+      positionContext = positionContext
+        ? `${positionContext}\n\n${itineraryNote}`
+        : itineraryNote;
+    }
+  }
 
-  const encoder = new TextEncoder();
-  const generator = streamOpenRouterReply(messages, undefined, positionContext);
+  if (
+    savedItinerary &&
+    savedItinerary.length > 0 &&
+    detectSavedItineraryQuery(lastUserContent)
+  ) {
+    const reply = buildDeterministicSavedItineraryReply(savedItinerary);
+    if (reply) return streamTextResponse(reply);
+  }
 
-  let first: IteratorResult<string, void>;
+  const llmMessages = prepareMessagesForLLM(
+    messages.map((m, i) =>
+      i === messages.length - 1 && m.role === "user"
+        ? { role: "user", content: lastUserContent }
+        : m
+    )
+  );
+
+  let agentResult: Awaited<ReturnType<typeof runAgentStream>>;
   try {
-    first = await generator.next();
+    agentResult = await runAgentStream(
+      llmMessages,
+      positionContext,
+      savedItinerary
+    );
   } catch (err) {
     console.error("[api/chat]", err);
-    const { status, message } = mapProviderError(err);
+    const status =
+      err && typeof err === "object" && "status" in err
+        ? (err as { status: number }).status
+        : mapProviderError(err).status;
+    const message =
+      err instanceof Error ? err.message : mapProviderError(err).message;
     return Response.json({ error: message }, { status });
   }
 
-  if (first.done) {
-    return Response.json(
-      { error: "OpenRouter không trả về nội dung" },
-      { status: 502 }
-    );
-  }
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      controller.enqueue(encoder.encode(first.value));
-      try {
-        for await (const chunk of generator) {
-          if (chunk) controller.enqueue(encoder.encode(chunk));
-        }
-        controller.close();
-      } catch (err) {
-        console.error("[api/chat] stream", err);
-        const { message } = mapProviderError(err);
-        controller.enqueue(encoder.encode(`\n\n⚠️ ${message}`));
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
+  return new Response(agentResult.stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",
+      "X-Path-Type": agentResult.pathType,
     },
   });
 }

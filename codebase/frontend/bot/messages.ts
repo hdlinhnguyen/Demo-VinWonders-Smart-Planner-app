@@ -1,0 +1,54 @@
+import { buildHallucinationControlBlock } from "@/app/data/hallucinationControl";
+import {
+  VINWONDERS_SYSTEM_PROMPT,
+  GENERAL_CHAT_PROMPT,
+  HAPPY_PATH_PROMPT,
+  LOW_CONFIDENCE_PROMPT,
+  FAILURE_PATH_PROMPT,
+  CORRECTION_PATH_PROMPT,
+} from "./prompts";
+import type { ChatMessage, PathType } from "./types";
+
+function selectPrompt(pathType: PathType): string {
+  switch (pathType) {
+    case "general":
+      return GENERAL_CHAT_PROMPT;
+    case "happy":
+      return HAPPY_PATH_PROMPT;
+    case "low-confidence":
+      return LOW_CONFIDENCE_PROMPT;
+    case "failure":
+      return FAILURE_PATH_PROMPT;
+    case "correction":
+      return CORRECTION_PATH_PROMPT;
+  }
+}
+
+export function toLLMMessages(
+  messages: ChatMessage[],
+  positionContext?: string,
+  pathType?: PathType
+) {
+  const basePrompt = pathType
+    ? selectPrompt(pathType)
+    : VINWONDERS_SYSTEM_PROMPT;
+
+  const hallucinationBlock = buildHallucinationControlBlock();
+  const systemContent = [
+    basePrompt,
+    hallucinationBlock,
+    positionContext
+      ? `## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return [
+    { role: "system" as const, content: systemContent },
+    ...messages.map((m) => ({
+      role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+      content: m.content,
+    })),
+  ];
+}

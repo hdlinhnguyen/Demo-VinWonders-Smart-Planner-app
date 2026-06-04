@@ -234,11 +234,8 @@ export default function VinWondersMap({
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
     function onResize() {
-      map.invalidateSize();
+      mapRef.current?.invalidateSize();
     }
 
     window.addEventListener("resize", onResize);
@@ -311,20 +308,19 @@ export default function VinWondersMap({
       remainLineRef.current = null;
     };
 
+    // Luôn xóa lộ trình cũ trước khi vẽ lớp mới (tránh chồng khi đổi đích)
+    clearNavOverlay();
+    clearTripLines();
+
     if (navigationActive && wps.length >= 2) {
-      clearTripLines();
       const fullLl = wps.map((w) => map.unproject([w.x, w.y], z));
 
-      if (!navFullLineRef.current) {
-        navFullLineRef.current = L.polyline(fullLl, {
-          color: NAV_OVERLAY.fullColor,
-          weight: NAV_OVERLAY.fullWeight,
-          opacity: NAV_OVERLAY.fullOpacity,
-          lineJoin: "round",
-        }).addTo(map);
-      } else {
-        navFullLineRef.current.setLatLngs(fullLl);
-      }
+      navFullLineRef.current = L.polyline(fullLl, {
+        color: NAV_OVERLAY.fullColor,
+        weight: NAV_OVERLAY.fullWeight,
+        opacity: NAV_OVERLAY.fullOpacity,
+        lineJoin: "round",
+      }).addTo(map);
 
       if (userPosition.progress < 1) {
         const remainCoords = pathSegmentFromProgress(
@@ -334,63 +330,39 @@ export default function VinWondersMap({
         const remainLl = remainCoords.map((w) =>
           map.unproject([w.x, w.y], z)
         );
-        if (!navRemainLineRef.current) {
-          navRemainLineRef.current = L.polyline(remainLl, {
-            color: NAV_OVERLAY.remainColor,
-            weight: NAV_OVERLAY.remainWeight,
-            opacity: NAV_OVERLAY.remainOpacity,
-            lineJoin: "round",
-          }).addTo(map);
-        } else {
-          navRemainLineRef.current.setLatLngs(remainLl);
-        }
-        navFullLineRef.current?.bringToFront();
-        navRemainLineRef.current?.bringToFront();
-      } else {
-        navRemainLineRef.current?.remove();
-        navRemainLineRef.current = null;
+        navRemainLineRef.current = L.polyline(remainLl, {
+          color: NAV_OVERLAY.remainColor,
+          weight: NAV_OVERLAY.remainWeight,
+          opacity: NAV_OVERLAY.remainOpacity,
+          lineJoin: "round",
+        }).addTo(map);
+        navFullLineRef.current.bringToFront();
+        navRemainLineRef.current.bringToFront();
       }
-    } else {
-      clearNavOverlay();
+    } else if (!navigationActive && wps.length >= 2 && userPosition.isMoving) {
+      const fullLl = wps.map((w) => map.unproject([w.x, w.y], z));
+      tripLineRef.current = L.polyline(fullLl, {
+        color: ROUTE_BASE.color,
+        weight: ROUTE_BASE.weight,
+        opacity: 0.5,
+        dashArray: ROUTE_BASE.dashArray,
+        lineJoin: "round",
+      }).addTo(map);
 
-      if (!navigationActive && wps.length >= 2 && userPosition.isMoving) {
-        const fullLl = wps.map((w) => map.unproject([w.x, w.y], z));
-        if (!tripLineRef.current) {
-          tripLineRef.current = L.polyline(fullLl, {
-            color: ROUTE_BASE.color,
-            weight: ROUTE_BASE.weight,
-            opacity: 0.5,
-            dashArray: ROUTE_BASE.dashArray,
-            lineJoin: "round",
-          }).addTo(map);
-        } else {
-          tripLineRef.current.setLatLngs(fullLl);
-        }
-
-        if (userPosition.progress < 1) {
-          const remainCoords = pathSegmentFromProgress(
-            wps,
-            userPosition.progress
-          );
-          const remainLl = remainCoords.map((w) =>
-            map.unproject([w.x, w.y], z)
-          );
-          if (!remainLineRef.current) {
-            remainLineRef.current = L.polyline(remainLl, {
-              color: ROUTE_BASE.color,
-              weight: ROUTE_BASE.weight + 1,
-              opacity: 0.85,
-              lineJoin: "round",
-            }).addTo(map);
-          } else {
-            remainLineRef.current.setLatLngs(remainLl);
-          }
-        } else {
-          remainLineRef.current?.remove();
-          remainLineRef.current = null;
-        }
-      } else {
-        clearTripLines();
+      if (userPosition.progress < 1) {
+        const remainCoords = pathSegmentFromProgress(
+          wps,
+          userPosition.progress
+        );
+        const remainLl = remainCoords.map((w) =>
+          map.unproject([w.x, w.y], z)
+        );
+        remainLineRef.current = L.polyline(remainLl, {
+          color: ROUTE_BASE.color,
+          weight: ROUTE_BASE.weight + 1,
+          opacity: 0.85,
+          lineJoin: "round",
+        }).addTo(map);
       }
     }
   }, [userPosition, followUser, navigationActive]);
@@ -445,9 +417,8 @@ export default function VinWondersMap({
     <div className="relative h-full min-h-[280px] w-full flex-1">
       <div
         ref={containerRef}
-        className={`absolute inset-0 z-0 bg-[#f4f3ef] ${
-          pickOnMap ? "cursor-crosshair" : ""
-        }`}
+        className={`absolute inset-0 z-0 bg-[#f4f3ef] ${pickOnMap ? "cursor-crosshair" : ""
+          }`}
       />
       {pickOnMap && (
         <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow">

@@ -9,8 +9,21 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import ChatMarkdown from "./ChatMarkdown";
+import ChatSpotCards from "./ChatSpotCards";
 import DiscoveryPanel from "./DiscoveryPanel";
 import ResizeHandle from "./ResizeHandle";
+import {
+  parseAssistantContent,
+  resolveChatCardEntries,
+  type ChatCardEntry,
+} from "../data/chatCards";
+import {
+  buildSavedItineraryForApi,
+  loadSelectedSpotIds,
+  saveSelectedSpotIds,
+  toggleSelectedSpotId,
+} from "../data/itineraryStorage";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useRouteSimulation } from "../hooks/useRouteSimulation";
 import type { NavSuggestion } from "../data/navConfirmation";
@@ -20,12 +33,39 @@ import {
   navDeclineReply,
 } from "../data/navConfirmation";
 import {
+  CHAT_LIMITS,
+  countWords,
+  normalizeUserInput,
+  prepareMessagesForLLM,
+  validateUserMessage,
+} from "@/bot/chatLimits";
+import {
+  formatPositionMovedNotice,
+  shouldInvalidateStaleReply,
+  snapshotPosition,
+  type PositionSnapshot,
+} from "../data/positionChange";
+import {
+  getChatNetworkErrorMessage,
+  isBrowserOffline,
+  OFFLINE_CHAT_MESSAGE,
+  sanitizeAssistantDisplayContent,
+  toUserFacingChatError,
+} from "../data/networkStatus";
+import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
   WELCOME_MESSAGE,
   filterSpotsByText,
   type Spot,
 } from "../data/spots";
+import {
+  getSpotsForZone,
+  getSuggestedSpotsNear,
+  getZoneNameForLocationId,
+} from "../data/spotList";
+import { parseItineraryFromText, stripItineraryBlock, flagItineraryItems, extractConstraints, type ItineraryItem } from "@/bot/tools";
+import ItineraryBoard from "./ItineraryBoard";
 
 type Role = "user" | "assistant";
 
@@ -33,7 +73,19 @@ interface Message {
   id: string;
   role: Role;
   content: string;
+  pathType?: string;
+  itinerary?: ItineraryItem[];
 }
+
+interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  savedAt: number;
+}
+
+const STORAGE_ACTIVE = "vinwonders_chat_history";
+const STORAGE_HISTORY = "vinwonders_conversations";
 
 const INITIAL_MESSAGE: Message = {
   id: "welcome",
@@ -45,21 +97,71 @@ function createId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-function renderMarkdown(text: string) {
-  return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+const CLIENT_SEND_COOLDOWN_MS = 1500;
+const CLIENT_DUPLICATE_MS = 30_000;
+
+function getOrCreateClientId(): string {
+  if (typeof window === "undefined") return "ssr";
+  const key = "vinwonders_client_id";
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = createId();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+const DANGEROUS_ACTIVITIES = [
+  "tàu lượn", "thác nước", "cơn thịnh nộ", "zeus", "drop", "mighty",
+  "cảm giác mạnh", "mạo hiểm", "độ cao", "lao xuống", "xoay", "quay"
+];
+
+function detectWarnings(content: string, messages: Message[]): string[] {
+  const allText = messages.map(m => m.content).join(" ").toLowerCase();
+  const isElderly = /\b([6-9]\d|1[0-2]\d)\s*tuổi|cụ|ông bà|người già|cao tuổi/.test(allText);
+  const isPregnant = /mang thai|bầu/.test(allText);
+  const hasHealthIssue = /tim mạch|huyết áp|động kinh/.test(allText);
+
+  if (!isElderly && !isPregnant && !hasHealthIssue) return [];
+
+  const warnings: string[] = [];
+  const lower = content.toLowerCase();
+
+  for (const act of DANGEROUS_ACTIVITIES) {
+    if (lower.includes(act)) {
+      if (isElderly) warnings.push(`⚠️ "${act}" có thể không phù hợp với người cao tuổi`);
+      if (isPregnant) warnings.push(`⚠️ "${act}" không phù hợp với phụ nữ mang thai`);
+      if (hasHealthIssue) warnings.push(`⚠️ "${act}" cần kiểm tra với bác sĩ trước`);
+      break;
+    }
+  }
+  return warnings;
 }
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
+  const [inputError, setInputError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const [lastQuery, setLastQuery] = useState("");
   const [pendingNavSuggestion, setPendingNavSuggestion] =
     useState<NavSuggestion | null>(null);
+  // messageId → editable itinerary items
+  const [itineraries, setItineraries] = useState<Record<string, ItineraryItem[]>>({});
+  const [positionMovedNotice, setPositionMovedNotice] = useState<string | null>(
+    null
+  );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [mapFocusId, setMapFocusId] = useState<string | null>(null);
+  const [itinerarySavedNotice, setItinerarySavedNotice] = useState<
+    string | null
+  >(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSendAtRef = useRef(0);
+  const lastSentContentRef = useRef("");
   const { width: chatWidth, startDrag } = useResizablePanel({
     defaultWidth: 420,
     minWidth: 300,
@@ -86,11 +188,90 @@ export default function ChatInterface() {
 
   const userPositionRef = useRef(userPosition);
   userPositionRef.current = userPosition;
+  const navigationTargetRef = useRef(navigationTarget);
+  navigationTargetRef.current = navigationTarget;
+  const positionAtLastReplyRef = useRef<PositionSnapshot | null>(null);
+  const prevPositionFrameRef = useRef<PositionSnapshot | null>(null);
 
-  const visibleSpots = useMemo(
-    () => filterSpotsByText(lastQuery, VINWONDERS_SPOTS),
-    [lastQuery]
+  function markReplyPosition() {
+    positionAtLastReplyRef.current = snapshotPosition(userPositionRef.current);
+    setPositionMovedNotice(null);
+  }
+
+  const [sideListSpots, setSideListSpots] = useState<Spot[] | null>(null);
+  const [listScheduleById, setListScheduleById] = useState<
+    Record<string, string>
+  >({});
+  const [listZoneFilter, setListZoneFilter] = useState<string | null>(() =>
+    getZoneNameForLocationId("amazon-van")
   );
+  const latestCardEntries = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role !== "assistant" || m.id === "welcome") continue;
+      const { text, cardPayload } = parseAssistantContent(m.content);
+      const entries = resolveChatCardEntries(text, cardPayload);
+      if (entries.length > 0) return entries;
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!latestCardEntries?.length) return;
+    setSideListSpots(latestCardEntries.map((e) => e.spot));
+    const times: Record<string, string> = {};
+    for (const e of latestCardEntries) {
+      if (e.scheduleTime) times[e.spot.id] = e.scheduleTime;
+    }
+    setListScheduleById(times);
+  }, [latestCardEntries]);
+
+  const visibleSpots = useMemo(() => {
+    if (sideListSpots && sideListSpots.length > 0) return sideListSpots;
+
+    const q = lastQuery.trim();
+    if (q) {
+      const matched = filterSpotsByText(q, VINWONDERS_SPOTS);
+      if (matched.length > 0) return matched;
+    }
+
+    if (listZoneFilter) {
+      return getSpotsForZone(listZoneFilter, {
+        x: userPosition.x,
+        y: userPosition.y,
+      });
+    }
+
+    return getSuggestedSpotsNear(userPosition.x, userPosition.y, 10);
+  }, [
+    sideListSpots,
+    lastQuery,
+    listZoneFilter,
+    userPosition.x,
+    userPosition.y,
+  ]);
+
+  const listFromChat = sideListSpots !== null && sideListSpots.length > 0;
+
+  const listCaption = useMemo(() => {
+    if (listFromChat) {
+      return `${visibleSpots.length} địa điểm từ lịch trình chat`;
+    }
+    if (listZoneFilter) {
+      return `${visibleSpots.length} gợi ý · khu ${listZoneFilter}`;
+    }
+    if (lastQuery.trim()) {
+      return `${visibleSpots.length} kết quả theo câu hỏi`;
+    }
+    return `${visibleSpots.length} địa điểm gợi ý gần bạn`;
+  }, [listFromChat, listZoneFilter, lastQuery, visibleSpots.length]);
+
+  function handleDestinationSelect(locationId: string) {
+    const zone = getZoneNameForLocationId(locationId);
+    if (zone) setListZoneFilter(zone);
+    setSideListSpots(null);
+    setListScheduleById({});
+  }
 
   const lastAssistant = [...messages]
     .reverse()
@@ -101,7 +282,126 @@ export default function ChatInterface() {
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, positionMovedNotice]);
+
+  useEffect(() => {
+    const prevFrame = prevPositionFrameRef.current;
+    const currentFrame = snapshotPosition(userPosition);
+    prevPositionFrameRef.current = currentFrame;
+
+    if (
+      !shouldInvalidateStaleReply(
+        positionAtLastReplyRef.current,
+        userPosition,
+        prevFrame
+      )
+    ) {
+      return;
+    }
+
+    setPendingNavSuggestion(null);
+    setPositionMovedNotice(formatPositionMovedNotice(userPosition));
+
+    const nav = navigationTargetRef.current;
+    if (nav) {
+      previewNavigation(nav.id, nav.name);
+    }
+  }, [
+    userPosition.x,
+    userPosition.y,
+    userPosition.isMoving,
+    userPosition.nearLocationId,
+    userPosition.nearLocationName,
+    previewNavigation,
+  ]);
+
+  useEffect(() => {
+    setSelectedIds(loadSelectedSpotIds());
+  }, []);
+
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem(STORAGE_HISTORY);
+      const existing: Conversation[] = savedHistory ? JSON.parse(savedHistory) : [];
+
+      // Move any active session from last visit into history
+      const saved = localStorage.getItem(STORAGE_ACTIVE);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Message[];
+        const real = parsed.filter((m) => m.id !== "welcome");
+        if (real.length > 0) {
+          const firstUser = real.find((m) => m.role === "user");
+          const title = firstUser
+            ? firstUser.content.slice(0, 48) + (firstUser.content.length > 48 ? "…" : "")
+            : "Cuộc trò chuyện";
+          const conv: Conversation = {
+            id: createId(),
+            title,
+            messages: parsed,
+            savedAt: Date.now(),
+          };
+          const updated = [conv, ...existing].slice(0, 20);
+          localStorage.setItem(STORAGE_HISTORY, JSON.stringify(updated));
+          setConversations(updated);
+        } else {
+          setConversations(existing);
+        }
+        localStorage.removeItem(STORAGE_ACTIVE);
+      } else {
+        setConversations(existing);
+      }
+    } catch {
+      // ignore parse/storage errors
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_ACTIVE, JSON.stringify(messages));
+    } catch {
+      // ignore storage errors (e.g. private mode quota)
+    }
+  }, [messages]);
+
+  function saveConversations(updated: Conversation[]) {
+    setConversations(updated);
+    try {
+      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  }
+
+  function saveCurrentChat() {
+    const real = messages.filter((m) => m.id !== "welcome");
+    if (real.length === 0) return;
+    const firstUser = real.find((m) => m.role === "user");
+    const title = firstUser
+      ? firstUser.content.slice(0, 48) + (firstUser.content.length > 48 ? "…" : "")
+      : "Cuộc trò chuyện";
+    const conv: Conversation = {
+      id: createId(),
+      title,
+      messages,
+      savedAt: Date.now(),
+    };
+    saveConversations([conv, ...conversations].slice(0, 20));
+  }
+
+  function loadConversation(conv: Conversation) {
+    setMessages(conv.messages);
+    setLastQuery("");
+    setInput("");
+    setPendingNavSuggestion(null);
+    setPositionMovedNotice(null);
+    positionAtLastReplyRef.current = null;
+    cancelNavigation();
+    setHistoryOpen(false);
+  }
+
+  function deleteConversation(id: string) {
+    saveConversations(conversations.filter((c) => c.id !== id));
+  }
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -120,23 +420,77 @@ export default function ChatInterface() {
     previewNavigation(id, name);
   }
 
+  function focusSpotOnMap(spot: Spot) {
+    setMapFocusId(spot.id);
+    setDiscoveryOpen(true);
+  }
+
+  function handleChatShowDirections(spot: Spot) {
+    focusSpotOnMap(spot);
+    handleShowDirections(spot.id, spot.name);
+  }
+
+  function handleCardShowOnMap(entry: ChatCardEntry) {
+    focusSpotOnMap(entry.spot);
+  }
+
+  function handleCardShowDirections(entry: ChatCardEntry) {
+    handleChatShowDirections(entry.spot);
+  }
+
+  function handleItinerarySaved(count: number) {
+    setItinerarySavedNotice(
+      `Đã lưu lịch trình (${count} địa điểm) vào thiết bị`
+    );
+    window.setTimeout(() => setItinerarySavedNotice(null), 5000);
+  }
+
   function toggleSpot(spot: Spot) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(spot.id)) next.delete(spot.id);
-      else next.add(spot.id);
-      return next;
-    });
+    const next = toggleSelectedSpotId(spot.id);
+    setSelectedIds(next);
+  }
+
+  function toggleCardEntry(entry: ChatCardEntry) {
+    toggleSpot(entry.spot);
   }
 
   async function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || isLoading) return;
+    if (isLoading) return;
 
-    setLastQuery(trimmed);
+    const validation = validateUserMessage(text);
+    if (!validation.ok) {
+      setInputError(validation.error);
+      return;
+    }
+    const content = validation.content;
+    setInputError(null);
+    setPositionMovedNotice(null);
+
+    const now = Date.now();
+    if (now - lastSendAtRef.current < CLIENT_SEND_COOLDOWN_MS) {
+      const waitSec = Math.ceil(
+        (CLIENT_SEND_COOLDOWN_MS - (now - lastSendAtRef.current)) / 1000
+      );
+      setInputError(`Bạn gửi quá nhanh. Vui lòng đợi ${waitSec} giây.`);
+      return;
+    }
+    if (
+      lastSentContentRef.current === content &&
+      now - lastSendAtRef.current < CLIENT_DUPLICATE_MS
+    ) {
+      setInputError(
+        "Tin nhắn trùng với lần gửi trước. Hãy chỉnh nội dung hoặc đợi một chút."
+      );
+      return;
+    }
+
+    setLastQuery(content);
+    setSideListSpots(null);
+    setListScheduleById({});
     setDiscoveryOpen(true);
+    // Giữ listZoneFilter — user vẫn có thể lọc khu qua Select
 
-    if (pendingNavSuggestion && isNavConfirm(trimmed)) {
+    if (pendingNavSuggestion && isNavConfirm(content)) {
       const { id, name } = pendingNavSuggestion;
       setPendingNavSuggestion(null);
       setInput("");
@@ -147,14 +501,14 @@ export default function ChatInterface() {
     const userMsg: Message = {
       id: createId(),
       role: "user",
-      content: trimmed,
+      content,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
     if (pendingNavSuggestion) {
-      if (isNavDecline(trimmed)) {
+      if (isNavDecline(content)) {
         setPendingNavSuggestion(null);
         setMessages((prev) => [
           ...prev,
@@ -170,11 +524,26 @@ export default function ChatInterface() {
       setPendingNavSuggestion(null);
     }
 
-    const history = [...messages, userMsg].filter((m) => m.id !== "welcome");
+    const history = prepareMessagesForLLM(
+      [...messages, userMsg]
+        .filter((m) => m.id !== "welcome")
+        .map(({ role, content }) => ({ role, content }))
+    );
 
     setIsLoading(true);
+    lastSendAtRef.current = now;
+    lastSentContentRef.current = content;
 
     const assistantId = createId();
+
+    if (isBrowserOffline()) {
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: OFFLINE_CHAT_MESSAGE },
+      ]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const livePosition = userPositionRef.current;
@@ -182,11 +551,14 @@ export default function ChatInterface() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: history.map(({ role, content }) => ({ role, content })),
+          messages: history,
+          clientId: getOrCreateClientId(),
           userPosition: {
             ...livePosition,
             updatedAt: Date.now(),
           },
+          lastReplyPosition: positionAtLastReplyRef.current,
+          savedItinerary: buildSavedItineraryForApi(),
         }),
       });
 
@@ -198,7 +570,14 @@ export default function ChatInterface() {
         } catch {
           /* ignore */
         }
-        throw new Error(errMsg);
+        const userErr = toUserFacingChatError(errMsg);
+        if (res.status === 429 && userErr === errMsg) {
+          setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+          setInput(content);
+          setInputError(errMsg);
+          return;
+        }
+        throw new Error(userErr);
       }
 
       const contentType = res.headers.get("Content-Type") ?? "";
@@ -220,15 +599,18 @@ export default function ChatInterface() {
         } else {
           setPendingNavSuggestion(null);
         }
+        markReplyPosition();
         return;
       }
 
       if (!res.body) throw new Error("Phản hồi không hợp lệ");
 
+      const pathType = res.headers.get("X-Path-Type") ?? undefined;
+
       setPendingNavSuggestion(null);
       setMessages((prev) => [
         ...prev,
-        { id: assistantId, role: "assistant", content: "" },
+        { id: assistantId, role: "assistant", content: "", pathType },
       ]);
 
       const reader = res.body.getReader();
@@ -241,23 +623,43 @@ export default function ChatInterface() {
         done = streamDone;
         if (value) {
           full += decoder.decode(value, { stream: true });
-          setLastQuery(full);
+          // Strip JSON block from display text while streaming
+          const display = sanitizeAssistantDisplayContent(
+            parseAssistantContent(stripItineraryBlock(full)).text
+          );
+          setLastQuery(display);
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, content: full } : m
+              m.id === assistantId ? { ...m, content: display } : m
             )
           );
         }
       }
+
+      // Parse itinerary from the full (unstripped) response
+      const parsed = parseItineraryFromText(full);
+      if (parsed) {
+        const constraints = extractConstraints(
+          [...messages, userMsg, { id: assistantId, role: "assistant" as Role, content: full }]
+            .map((m) => ({ role: m.role, content: m.content }))
+        );
+        const flagged = flagItineraryItems(parsed, constraints);
+        setItineraries((prev) => ({ ...prev, [assistantId]: flagged }));
+      }
+
+      markReplyPosition();
     } catch (err) {
-      const msg =
+      const raw =
         err instanceof Error
           ? err.message
           : "Xin lỗi, đã có lỗi. Vui lòng thử lại.";
+      const msg =
+        getChatNetworkErrorMessage(err) ?? toUserFacingChatError(raw);
       setMessages((prev) => [
         ...prev,
         { id: assistantId, role: "assistant", content: msg },
       ]);
+      if (msg === OFFLINE_CHAT_MESSAGE) setInputError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -291,6 +693,20 @@ export default function ChatInterface() {
     }
   }
 
+  function handleInputChange(value: string) {
+    setInput(normalizeUserInput(value));
+    if (inputError) setInputError(null);
+  }
+
+  const inputWordCount = countWords(input);
+  const showInputHint =
+    inputWordCount >= CHAT_LIMITS.warnUserMessageWords ||
+    inputWordCount >= CHAT_LIMITS.maxUserMessageWords - 10;
+
+  function handleSwapActivity(item: ItineraryItem) {
+    sendMessage(`Hoạt động "${item.name}" không phù hợp, hãy gợi ý hoạt động thay thế phù hợp hơn`);
+  }
+
   function handleNavConfirm() {
     if (!pendingNavSuggestion || isLoading) return;
     const { id, name } = pendingNavSuggestion;
@@ -305,23 +721,37 @@ export default function ChatInterface() {
   }
 
   function resetChat() {
+    saveCurrentChat();
     setMessages([INITIAL_MESSAGE]);
+    setItineraries({});
     setSelectedIds(new Set());
+    saveSelectedSpotIds(new Set());
+    setSideListSpots(null);
+    setListScheduleById({});
+    setListZoneFilter(getZoneNameForLocationId("amazon-van"));
+    setItinerarySavedNotice(null);
     setLastQuery("");
     setInput("");
     setPendingNavSuggestion(null);
+    setPositionMovedNotice(null);
+    positionAtLastReplyRef.current = null;
     cancelNavigation();
+    try {
+      localStorage.removeItem(STORAGE_ACTIVE);
+    } catch {
+      // ignore
+    }
   }
 
   return (
     <div
-      className="flex h-dvh overflow-hidden bg-background"
+      className="flex h-dvh overflow-hidden bg-transparent"
       style={
         { "--chat-panel-w": `${chatWidth}px` } as CSSProperties
       }
     >
       {/* ── Left: Chat panel — kéo cạnh phải để resize (desktop) ── */}
-      <section className="flex min-h-0 w-full min-w-0 flex-col bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
+      <section className="glass-panel relative flex min-h-0 w-full min-w-0 flex-col border-r border-border bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
         {/* Logo */}
         <header className="flex items-center justify-between px-5 py-4">
           <span className="text-xl font-bold tracking-tight">
@@ -335,6 +765,14 @@ export default function ChatInterface() {
             >
               Khám phá
             </button>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              className="text-xs text-muted hover:text-foreground"
+              title="Lịch sử trò chuyện"
+            >
+              <HistoryIcon className="h-4 w-4" />
+            </button>
             {messages.length > 1 && (
               <button
                 type="button"
@@ -347,15 +785,85 @@ export default function ChatInterface() {
           </div>
         </header>
 
+        {/* History drawer */}
+        {historyOpen && (
+          <div className="glass-panel absolute inset-0 z-50 flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <span className="text-sm font-semibold">Lịch sử trò chuyện</span>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(false)}
+                className="text-muted hover:text-foreground"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {conversations.length === 0 ? (
+                <p className="text-sm text-muted py-4 text-center">Chưa có lịch sử</p>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className="flex items-start justify-between gap-2 rounded-xl border border-border px-4 py-3 hover:bg-black/5"
+                  >
+                    <button
+                      type="button"
+                      className="flex-1 text-left"
+                      onClick={() => loadConversation(conv)}
+                    >
+                      <p className="text-sm font-medium leading-snug line-clamp-2">{conv.title}</p>
+                      <p className="mt-0.5 text-[10px] text-muted">
+                        {new Date(conv.savedAt).toLocaleString("vi-VN", {
+                          day: "2-digit", month: "2-digit", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                        {" · "}
+                        {conv.messages.filter((m) => m.role === "user").length} tin
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteConversation(conv.id)}
+                      className="shrink-0 text-muted hover:text-red-500 mt-0.5"
+                      aria-label="Xoá"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         <div ref={scrollRef} className="scroll-area flex-1 overflow-y-auto px-5">
           <div className="space-y-6 pb-4 pt-2">
             {messages.map((m) => (
               <div key={m.id} className="animate-in">
                 {m.role === "assistant" ? (
-                  <AssistantMessage content={m.content} />
+                  <AssistantMessage
+                    messageId={m.id}
+                    content={m.content}
+                    enableSpotCards={m.id !== "welcome"}
+                    selectedIds={selectedIds}
+                    warnings={detectWarnings(m.content, messages)}
+                    itinerary={itineraries[m.id]}
+                    onItineraryChange={(items) =>
+                      setItineraries((prev) => ({ ...prev, [m.id]: items }))
+                    }
+                    onToggleEntry={toggleCardEntry}
+                    onShowOnMap={handleCardShowOnMap}
+                    onShowDirections={handleCardShowDirections}
+                    onItinerarySaved={handleItinerarySaved}
+                    onSwapActivity={() =>
+                      sendMessage("Hoạt động này không phù hợp, gợi ý trò khác phù hợp hơn")
+                    }
+                    onSwapItem={handleSwapActivity}
+                  />
                 ) : (
-                  <p className="ml-auto max-w-[85%] rounded-2xl bg-[#f3f4f6] px-4 py-2.5 text-sm leading-relaxed">
+                  <p className="ml-auto max-w-[85%] rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm font-medium leading-relaxed text-foreground shadow-sm">
                     {m.content}
                   </p>
                 )}
@@ -366,6 +874,18 @@ export default function ChatInterface() {
               messages[messages.length - 1]?.role === "user" && (
                 <TypingIndicator />
               )}
+
+            {itinerarySavedNotice && !isLoading && (
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-xs font-medium text-green-900">
+                {itinerarySavedNotice}
+              </div>
+            )}
+
+            {positionMovedNotice && !isLoading && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-950">
+                <PositionMovedNotice content={positionMovedNotice} />
+              </div>
+            )}
 
             {/* Quick chips — ngay dưới tin nhắn bot cuối (Layla behavior) */}
             {!isLoading && pendingNavSuggestion && (
@@ -405,17 +925,19 @@ export default function ChatInterface() {
         </div>
 
         {/* Composer — Layla "Ask anything..." */}
-        <footer className="border-t border-border px-4 py-4">
+        <footer className="border-t border-border bg-surface px-4 py-4">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-end gap-2 rounded-2xl border border-border bg-[#fafafa] px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
               <textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => handleInputChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={1}
-                placeholder="Hỏi bất cứ điều gì..."
-                className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-sm outline-none placeholder:text-muted"
+                aria-invalid={!!inputError}
+                aria-describedby="chat-input-hint"
+                placeholder="Hỏi ngắn gọn (vd: trạm y tế gần nhất)..."
+                className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-[var(--muted-soft)]"
               />
               <div className="flex shrink-0 items-center gap-1 pb-0.5">
                 <button
@@ -436,9 +958,22 @@ export default function ChatInterface() {
               </div>
             </div>
           </form>
-          <p className="mt-2 text-center text-[10px] text-muted">
-            Thông tin tham khảo · Kiểm tra giá vé chính thức trước khi đi
-          </p>
+          <div
+            id="chat-input-hint"
+            className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10px] text-[var(--muted-soft)]"
+          >
+            {inputError ? (
+              <span className="text-red-600">{inputError}</span>
+            ) : showInputHint ? (
+              <span className={inputWordCount >= CHAT_LIMITS.maxUserMessageWords ? "text-orange-600" : "text-muted"}>
+                {inputWordCount}/{CHAT_LIMITS.maxUserMessageWords} từ
+              </span>
+            ) : (
+              <span>{`Tối đa ${CHAT_LIMITS.maxUserMessageWords} từ · ${CHAT_LIMITS.maxHistoryMessages} tin gần nhất gửi AI`}</span>
+            )}
+            <span>·</span>
+            <span>Thông tin tham khảo · Kiểm tra giá vé chính thức trước khi đi</span>
+          </div>
         </footer>
       </section>
 
@@ -467,6 +1002,11 @@ export default function ChatInterface() {
           onGoToCoords={goToCoords}
           onTeleport={teleportToLocation}
           onUseRoute={usePredefinedRoute}
+          focusSpotId={mapFocusId}
+          onFocusSpot={setMapFocusId}
+          scheduleTimesBySpotId={listScheduleById}
+          listCaption={listCaption}
+          onDestinationSelect={handleDestinationSelect}
         />
       </div>
 
@@ -493,28 +1033,110 @@ export default function ChatInterface() {
           onGoToCoords={goToCoords}
           onTeleport={teleportToLocation}
           onUseRoute={usePredefinedRoute}
+          focusSpotId={mapFocusId}
+          onFocusSpot={setMapFocusId}
+          scheduleTimesBySpotId={listScheduleById}
+          listCaption={listCaption}
+          onDestinationSelect={handleDestinationSelect}
         />
       </div>
     </div>
   );
 }
 
-function AssistantMessage({ content }: { content: string }) {
+function PositionMovedNotice({ content }: { content: string }) {
+  return (
+    <div className="chat-markdown">
+      <ChatMarkdown content={content} />
+    </div>
+  );
+}
+
+function AssistantMessage({
+  messageId,
+  content,
+  enableSpotCards = true,
+  selectedIds,
+  warnings,
+  itinerary,
+  onItineraryChange,
+  onToggleEntry,
+  onShowOnMap,
+  onShowDirections,
+  onItinerarySaved,
+  onSwapActivity,
+  onSwapItem,
+}: {
+  messageId: string;
+  content: string;
+  enableSpotCards?: boolean;
+  selectedIds: Set<string>;
+  warnings?: string[];
+  itinerary?: ItineraryItem[];
+  onItineraryChange?: (items: ItineraryItem[]) => void;
+  onToggleEntry: (entry: ChatCardEntry) => void;
+  onShowOnMap: (entry: ChatCardEntry) => void;
+  onShowDirections: (entry: ChatCardEntry) => void;
+  onItinerarySaved?: (count: number) => void;
+  onSwapActivity?: () => void;
+  onSwapItem?: (item: ItineraryItem) => void;
+}) {
   if (!content) return <TypingIndicator />;
+
+  const { text, cardPayload } = parseAssistantContent(content);
+  const entries = enableSpotCards
+    ? resolveChatCardEntries(text, cardPayload)
+    : [];
 
   return (
     <div className="space-y-2">
-      <div
-        className="chat-markdown text-sm leading-relaxed text-foreground/90"
-        dangerouslySetInnerHTML={{
-          __html: renderMarkdown(content).replace(/\n/g, "<br />"),
-        }}
-      />
+      <div className="chat-markdown">
+        <ChatMarkdown content={text} />
+      </div>
+
+      {entries.length > 0 && (
+        <ChatSpotCards
+          entries={entries}
+          messageId={messageId}
+          selectedIds={selectedIds}
+          onToggleSpot={onToggleEntry}
+          onShowOnMap={onShowOnMap}
+          onShowDirections={onShowDirections}
+          onItinerarySaved={onItinerarySaved}
+        />
+      )}
+
+      {/* Cảnh báo */}
+      {warnings && warnings.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 space-y-1">
+          {warnings.map((w, i) => (
+            <p key={i} className="text-xs text-red-700">{w}</p>
+          ))}
+          {onSwapActivity && (
+            <button
+              type="button"
+              onClick={onSwapActivity}
+              className="mt-2 rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition"
+            >
+              Đổi trò khác
+            </button>
+          )}
+        </div>
+      )}
+
+      {itinerary && itinerary.length > 0 && onItineraryChange && onSwapItem && (
+        <ItineraryBoard
+          items={itinerary}
+          onChange={onItineraryChange}
+          onSwap={onSwapItem}
+        />
+      )}
+
       <button
         type="button"
         className="text-muted hover:text-foreground"
         aria-label="Sao chép"
-        onClick={() => navigator.clipboard?.writeText(content)}
+        onClick={() => navigator.clipboard?.writeText(text)}
       >
         <CopyIcon className="h-4 w-4" />
       </button>
@@ -554,6 +1176,32 @@ function CopyIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="9" y="9" width="13" height="13" rx="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function HistoryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
     </svg>
   );
 }

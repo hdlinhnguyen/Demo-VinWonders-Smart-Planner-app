@@ -20,6 +20,8 @@ interface LocationSimulatorProps {
   onGoToLocation: (locationId: string, autoStart?: boolean) => void;
   onTeleport: (locationId: string) => void;
   onUseRoute: (routeId: string, autoStart?: boolean) => void;
+  /** Khi đổi dropdown Chọn đích đến — lọc list địa điểm theo khu */
+  onDestinationSelect?: (locationId: string) => void;
 }
 
 export default function LocationSimulator({
@@ -34,10 +36,16 @@ export default function LocationSimulator({
   onGoToLocation,
   onTeleport,
   onUseRoute,
+  onDestinationSelect,
 }: LocationSimulatorProps) {
   const [selectedDest, setSelectedDest] = useState(
     position.trip.destinationId ?? "amazon-van"
   );
+
+  function handleDestChange(locationId: string) {
+    setSelectedDest(locationId);
+    onDestinationSelect?.(locationId);
+  }
   const pct = Math.round(position.progress * 100);
   const atEnd = position.progress >= 1;
 
@@ -73,7 +81,7 @@ export default function LocationSimulator({
       </label>
       <select
         value={selectedDest}
-        onChange={(e) => setSelectedDest(e.target.value)}
+        onChange={(e) => handleDestChange(e.target.value)}
         className="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-blue-500"
       >
         {DESTINATION_OPTIONS.map((group) => (

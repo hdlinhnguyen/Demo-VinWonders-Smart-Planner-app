@@ -103,6 +103,19 @@ export function getNearestLocations(
   return rankLocationsByRouteDistance(x, y).slice(0, limit);
 }
 
+/** Địa điểm gắn chấm xanh (euclidean) + khoảng cách tới tọa độ */
+export function getAnchorAtPoint(
+  x: number,
+  y: number
+): LocationDistance | null {
+  const anchorId = nearestLocationIdAt(x, y);
+  if (!anchorId) return null;
+  const loc = getLocationById(anchorId);
+  if (!loc) return null;
+  const access = Math.hypot(loc.coords.x - x, loc.coords.y - y);
+  return toLocationDistance(loc, access);
+}
+
 export function getNearestByType(
   x: number,
   y: number,
@@ -187,7 +200,20 @@ export function buildCompactLocationContext(pos: SimulatedPosition): string {
 export function buildFullUserLocationContext(
   pos: SimulatedPosition
 ): string {
-  return [buildUserPositionContext(pos), buildCompactLocationContext(pos)].join(
-    "\n"
-  );
+  const anchor = getAnchorAtPoint(pos.x, pos.y);
+  const nearest = getNearestLocations(pos.x, pos.y, 1)[0];
+  const anchorNote = anchor
+    ? `Điểm gắn chấm xanh (trên bản đồ): **${anchor.name}** (~${Math.round(anchor.routeDistance)} đv).`
+    : "";
+  const routeNote = nearest
+    ? `Địa điểm gần nhất theo đường route: **${nearest.name}** (~${nearest.walkMinutes} phút đi bộ).`
+    : "";
+  return [
+    buildUserPositionContext(pos),
+    buildCompactLocationContext(pos),
+    anchorNote,
+    routeNote,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

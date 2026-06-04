@@ -9,7 +9,11 @@ export type ProximityIntent =
   | `nearest_${(typeof PARK_TYPES)[number]}`;
 
 const PROXIMITY_TRIGGER =
-  /ở gần|o gan|gần nhất|gan nhat|gần tôi|gan toi|đang ở|dang o|ở đâu|o dau|vị trí|vi tri|chấm xanh|cham xanh|định vị|dinh vi|chỉ đường|chi duong|dẫn đường|dan duong|đường đi|duong di|near me|where am i/i;
+  /ở gần|o gan|gần nhất|gan nhat|gần tôi|gan toi|đang ở|dang o|ở đâu|o dau|vị trí|vi tri|chấm xanh|cham xanh|định vị|dinh vi|chỉ đường|chi duong|dẫn đường|dan duong|đường đi|duong di|near me|where am i|địa điểm nào|dia diem nao|chỗ nào|cho nao|gần đây|gan day|đang gần|dang gan|ở điểm nào|o diem nao|gan toi nhat|gần tôi nhất/i;
+
+/** Câu hỏi “đang gần địa điểm/chỗ nào” — luôn dùng nearest_overall */
+const NEAR_WHICH_PLACE =
+  /(?:gan|gần|gan nhat|gần nhất).*(?:dia diem|địa điểm|cho|chỗ|noi|nơi|đâu|điểm)|(?:dia diem|địa điểm|cho|chỗ).*(?:gan|gần|gan nhat|gần nhất)|(?:dang o|đang ở).*(?:đâu|dau|nao|nào)/;
 
 function normalize(text: string): string {
   return text
@@ -80,6 +84,10 @@ export function matchLocationTypeInText(text: string): string | null {
 export function detectProximityIntent(text: string): ProximityIntent | null {
   const t = normalize(text);
   if (!t) return null;
+
+  if (NEAR_WHICH_PLACE.test(t)) {
+    return "nearest_overall";
+  }
 
   const matchedType = matchLocationTypeInText(text);
   const hasProximityCue = PROXIMITY_TRIGGER.test(t);

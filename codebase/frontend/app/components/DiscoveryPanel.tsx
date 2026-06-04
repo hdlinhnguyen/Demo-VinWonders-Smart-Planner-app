@@ -6,6 +6,7 @@ import type { ParkCoords } from "../data/locations";
 import type { SimulatedPosition } from "../data/routeSimulation";
 import LocationSimulator from "./LocationSimulator";
 import NavigationBanner from "./NavigationBanner";
+import SpotCard from "./SpotCard";
 import VinWondersMap from "./VinWondersMap";
 
 interface DiscoveryPanelProps {
@@ -29,6 +30,13 @@ interface DiscoveryPanelProps {
   onGoToCoords: (coords: ParkCoords, autoStart?: boolean) => void;
   onTeleport: (id: string) => void;
   onUseRoute: (routeId: string, autoStart?: boolean) => void;
+  /** Focus map từ chat card (controlled) */
+  focusSpotId?: string | null;
+  onFocusSpot?: (id: string) => void;
+  /** Khung giờ lịch trình từ chat (card lớn trên list) */
+  scheduleTimesBySpotId?: Record<string, string>;
+  listCaption?: string;
+  onDestinationSelect?: (locationId: string) => void;
 }
 
 export default function DiscoveryPanel({
@@ -52,9 +60,20 @@ export default function DiscoveryPanel({
   onGoToCoords,
   onTeleport,
   onUseRoute,
+  focusSpotId,
+  onFocusSpot,
+  scheduleTimesBySpotId = {},
+  listCaption,
+  onDestinationSelect,
 }: DiscoveryPanelProps) {
-  const [focusId, setFocusId] = useState<string | null>(null);
+  const [internalFocusId, setInternalFocusId] = useState<string | null>(null);
+  const focusId = focusSpotId ?? internalFocusId;
   const highlightedIds = new Set(spots.map((s) => s.id));
+
+  function focusSpot(id: string) {
+    onFocusSpot?.(id);
+    setInternalFocusId(id);
+  }
 
   return (
     <>
@@ -68,7 +87,7 @@ export default function DiscoveryPanel({
       )}
 
       <aside
-        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-surface transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
+        className={`glass-panel fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-border bg-surface transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:flex-1 lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
@@ -113,30 +132,33 @@ export default function DiscoveryPanel({
           onGoToLocation={onGoToLocation}
           onTeleport={onTeleport}
           onUseRoute={onUseRoute}
+          onDestinationSelect={onDestinationSelect}
         />
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="scroll-area flex-1 overflow-y-auto p-4 lg:max-w-sm lg:border-r lg:border-border">
-            <p className="mb-3 text-xs text-muted">
-              {spots.length} kết quả · dữ liệu từ mock_data
+            <p className="mb-3 text-xs text-[var(--muted-soft)]">
+              {listCaption ??
+                `${spots.length} kết quả · dữ liệu từ mock_data`}
             </p>
             <div className="space-y-4">
               {spots.map((spot) => (
                 <SpotCard
                   key={spot.id}
                   spot={spot}
+                  scheduleTime={scheduleTimesBySpotId[spot.id]}
                   selected={selectedIds.has(spot.id)}
                   onToggle={() => onToggleSpot(spot)}
-                  onShowOnMap={() => setFocusId(spot.id)}
+                  onShowOnMap={() => focusSpot(spot.id)}
                   onShowDirections={() => {
-                    setFocusId(spot.id);
+                    focusSpot(spot.id);
                     onShowDirections(spot.id, spot.name);
                   }}
                 />
               ))}
               {spots.length === 0 && (
-                <p className="py-8 text-center text-sm text-muted">
-                  Không tìm thấy địa điểm phù hợp. Thử hỏi chatbot nhé.
+                <p className="py-8 text-center text-sm text-[var(--muted-soft)]">
+                  Chưa có gợi ý. Đổi đích đến hoặc hỏi chatbot lịch trình nhé.
                 </p>
               )}
             </div>
@@ -153,7 +175,7 @@ export default function DiscoveryPanel({
               navigationActive={!!navigationTarget}
               navigationDestinationId={navigationTarget?.id ?? null}
               onMapPick={(c) => onGoToCoords(c, true)}
-              onSelectLocation={(id) => setFocusId(id)}
+              onSelectLocation={(id) => focusSpot(id)}
             />
           </div>
         </div>
@@ -171,85 +193,12 @@ export default function DiscoveryPanel({
               navigationActive={!!navigationTarget}
               navigationDestinationId={navigationTarget?.id ?? null}
               onMapPick={(c) => onGoToCoords(c, true)}
-              onSelectLocation={(id) => setFocusId(id)}
+              onSelectLocation={(id) => focusSpot(id)}
             />
           </div>
         </div>
       </aside>
     </>
-  );
-}
-
-function SpotCard({
-  spot,
-  selected,
-  onToggle,
-  onShowOnMap,
-  onShowDirections,
-}: {
-  spot: Spot;
-  selected: boolean;
-  onToggle: () => void;
-  onShowOnMap: () => void;
-  onShowDirections: () => void;
-}) {
-  return (
-    <article className="group overflow-hidden rounded-2xl bg-surface shadow-[0_2px_16px_rgba(0,0,0,0.06)] ring-1 ring-black/5 animate-in">
-      <button
-        type="button"
-        onClick={onShowOnMap}
-        className={`relative block w-full h-36 bg-gradient-to-br ${spot.gradient} text-left`}
-      >
-        <div className="absolute inset-0 bg-black/10" />
-        <div
-          className="absolute left-3 top-3 flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] text-white backdrop-blur"
-          style={{ backgroundColor: `${spot.zoneColor}cc` }}
-        >
-          <span className="font-medium">{spot.category}</span>
-          <span>·</span>
-          <span>★ {spot.rating}</span>
-        </div>
-        <div className="absolute bottom-3 left-3 right-3">
-          <p className="text-xs text-white/90">{spot.location}</p>
-          <h3 className="text-base font-semibold text-white line-clamp-2">
-            {spot.name}
-          </h3>
-        </div>
-      </button>
-      <p className="line-clamp-2 px-4 pt-3 text-xs leading-relaxed text-muted">
-        {spot.description}
-      </p>
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs text-muted">{spot.waitTime}</span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onShowDirections}
-            className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100"
-          >
-            Chỉ đường
-          </button>
-          <button
-            type="button"
-            onClick={onShowOnMap}
-            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-black/5"
-          >
-            Xem map
-          </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-              selected
-                ? "bg-accent text-white"
-                : "bg-foreground text-surface hover:opacity-90"
-            }`}
-          >
-            {selected ? "✓ Đã chọn" : "+ Chọn"}
-          </button>
-        </div>
-      </div>
-    </article>
   );
 }
 

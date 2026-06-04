@@ -182,7 +182,8 @@ export async function handleChat(
   const generator = streamOpenRouterReply(
     llmMessages,
     undefined,
-    positionContext
+    positionContext,
+    pathType
   );
 
   let first: IteratorResult<string, void>;

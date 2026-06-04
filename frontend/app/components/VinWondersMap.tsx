@@ -235,6 +235,18 @@ export default function VinWondersMap({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
+
+    function onResize() {
+      map.invalidateSize();
+    }
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
     const L = leafletRef.current;
     if (!map || !L || !userPosition) return;
 

@@ -7,8 +7,11 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from "react";
 import DiscoveryPanel from "./DiscoveryPanel";
+import ResizeHandle from "./ResizeHandle";
+import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useRouteSimulation } from "../hooks/useRouteSimulation";
 import type { NavSuggestion } from "../data/navConfirmation";
 import {
@@ -57,6 +60,11 @@ export default function ChatInterface() {
     useState<NavSuggestion | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { width: chatWidth, startDrag } = useResizablePanel({
+    defaultWidth: 420,
+    minWidth: 300,
+    maxWidth: 720,
+  });
 
   const {
     position: userPosition,
@@ -306,9 +314,14 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
-      {/* ── Left: Chat panel (Layla-style) ── */}
-      <section className="flex w-full min-w-0 flex-col border-r border-border bg-surface lg:max-w-[420px] xl:max-w-[440px]">
+    <div
+      className="flex h-dvh overflow-hidden bg-background"
+      style={
+        { "--chat-panel-w": `${chatWidth}px` } as CSSProperties
+      }
+    >
+      {/* ── Left: Chat panel — kéo cạnh phải để resize (desktop) ── */}
+      <section className="flex min-h-0 w-full min-w-0 flex-col bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
         {/* Logo */}
         <header className="flex items-center justify-between px-5 py-4">
           <span className="text-xl font-bold tracking-tight">
@@ -428,6 +441,8 @@ export default function ChatInterface() {
           </p>
         </footer>
       </section>
+
+      <ResizeHandle onMouseDown={startDrag} />
 
       {/* ── Right: Discovery panel ── */}
       <div className="hidden min-w-0 flex-1 lg:flex">

@@ -106,10 +106,11 @@ export function buildSavedItineraryAgentContext(
   const cardsMarker = buildCardsMarker(spots);
 
   return [
-    "## Lịch trình / địa điểm user ĐÃ LƯU (localStorage — nguồn chính xác duy nhất)",
+    "## Lịch trình / địa điểm user ĐANG CHỌN (localStorage — cập nhật khi + Chọn / Bỏ chọn)",
     lines.join("\n"),
     "",
     "**Quy tắc Agent (bắt buộc):**",
+    "- Danh sách trên là **danh sách hiện tại**; địa điểm user **Bỏ chọn** đã bị gỡ — **không** nhắc lại.",
     "- Khi user hỏi về lịch trình đã lưu / đã chọn: **chỉ** dùng đúng tên và **id** ở trên; không đổi tên, không bịa địa điểm.",
     "- Dòng <<<CARDS>>> cuối câu trả lời **phải khớp chính xác** (cùng id, cùng thứ tự, time khớp khung giờ):",
     cardsMarker.trim(),

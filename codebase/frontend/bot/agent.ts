@@ -4,6 +4,7 @@ import { detectPath } from "./tools";
 import type { ItineraryItem } from "./tools";
 import { prepareMessagesForLLM } from "@/bot/chatLimits";
 import type { ChatMessage, PathType } from "./types";
+import { toUserFacingChatError } from "@/app/data/networkStatus";
 import { mapProviderError } from "./errors";
 
 export interface AgentStreamResult {
@@ -87,7 +88,9 @@ export async function runAgentStream(
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err));
         const { message } = mapProviderError(e);
-        controller.enqueue(encoder.encode(`\n\n⚠️ ${message}`));
+        controller.enqueue(
+          encoder.encode(`\n\n${toUserFacingChatError(message)}`)
+        );
       }
       controller.close();
     },

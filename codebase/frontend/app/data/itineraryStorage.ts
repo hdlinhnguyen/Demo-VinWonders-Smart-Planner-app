@@ -1,5 +1,5 @@
 import type { ItineraryItem as BotItineraryItem } from "@/bot/tools";
-import { ALL_LOCATIONS, getLocationById } from "./locations";
+import { ALL_LOCATIONS, getLocationById, locationToSpot } from "./locations";
 import type { Spot } from "./spots";
 
 export const STORAGE_ITINERARY = "vinwonders_itinerary";
@@ -78,13 +78,17 @@ export function saveItineraryFromCards(
   const items = entries.map((e, i) =>
     spotToItineraryItem(e.spot, e.scheduleTime, i)
   );
-  return saveItinerary(items, {
+  const saved = saveItinerary(items, {
     title:
       entries.length >= 2
         ? `Lịch trình ${entries.length} địa điểm`
         : `Gợi ý: ${entries[0].spot.name}`,
     sourceMessageId,
   });
+  const sel = loadSelectedSpotIds();
+  for (const e of entries) sel.add(e.spot.id);
+  saveSelectedSpotIds(sel);
+  return saved;
 }
 
 export function loadSelectedSpotIds(): Set<string> {
@@ -111,11 +115,78 @@ export function saveSelectedSpotIds(ids: Set<string>): void {
   }
 }
 
+/** Gỡ một địa điểm khỏi mọi storage Agent đọc (lịch card + board) */
+export function removeSpotFromPersistedItinerary(spotId: string): void {
+  const card = loadItinerary();
+  if (card?.items) {
+    const filtered = card.items.filter((it) => it.spotId !== spotId);
+    if (filtered.length === 0) {
+      try {
+        localStorage.removeItem(STORAGE_ITINERARY);
+      } catch {
+        /* ignore */
+      }
+    } else {
+      saveItinerary(
+        filtered.map((it, i) => ({ ...it, order: i })),
+        { title: card.title, sourceMessageId: card.sourceMessageId }
+      );
+    }
+  }
+
+  const board = loadBoardItinerary();
+  if (board) {
+    const filtered = board.filter((it) => {
+      const loc =
+        getLocationById(it.id) ??
+        ALL_LOCATIONS.find((l) => l.name === it.name);
+      return loc?.id !== spotId;
+    });
+    try {
+      if (filtered.length === 0) {
+        localStorage.removeItem(STORAGE_BOARD_ITINERARY);
+      } else {
+        localStorage.setItem(
+          STORAGE_BOARD_ITINERARY,
+          JSON.stringify(filtered)
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function syncSpotIntoCardItinerary(spot: Spot): void {
+  const card = loadItinerary();
+  const items = card?.items ?? [];
+  if (items.some((it) => it.spotId === spot.id)) return;
+  const next = [...items, spotToItineraryItem(spot, undefined, items.length)];
+  saveItinerary(next, {
+    title:
+      card?.title ??
+      (next.length >= 2
+        ? `Đã chọn ${next.length} địa điểm`
+        : `Gợi ý: ${spot.name}`),
+    sourceMessageId: card?.sourceMessageId,
+  });
+}
+
 export function toggleSelectedSpotId(spotId: string): Set<string> {
   const next = loadSelectedSpotIds();
-  if (next.has(spotId)) next.delete(spotId);
+  const removing = next.has(spotId);
+  if (removing) next.delete(spotId);
   else next.add(spotId);
   saveSelectedSpotIds(next);
+
+  const loc = getLocationById(spotId);
+  if (loc) {
+    if (removing) {
+      removeSpotFromPersistedItinerary(spotId);
+    } else {
+      syncSpotIntoCardItinerary(locationToSpot(loc));
+    }
+  }
   return next;
 }
 
@@ -157,42 +228,57 @@ export function getExcludedSpotIds(): Set<string> {
   return ids;
 }
 
-/** Gửi lên /api/chat — gộp lịch board + lịch card + mục đã chọn */
+function resolveBoardLocationId(it: BotItineraryItem): string | null {
+  const byId = getLocationById(it.id);
+  if (byId) return byId.id;
+  const byName = ALL_LOCATIONS.find((l) => l.name === it.name);
+  return byName?.id ?? null;
+}
+
+/** Gửi lên /api/chat — chỉ địa điểm còn trong + Chọn (đã sync storage) */
 export function buildSavedItineraryForApi(): BotItineraryItem[] | null {
+  const selected = loadSelectedSpotIds();
   const merged: BotItineraryItem[] = [];
   const seenNames = new Set<string>();
 
-  const board = loadBoardItinerary();
-  if (board) {
-    for (const it of board) {
-      merged.push(it);
-      seenNames.add(it.name);
-    }
-  }
+  const pushItem = (item: BotItineraryItem) => {
+    if (seenNames.has(item.name)) return;
+    seenNames.add(item.name);
+    merged.push(item);
+  };
 
   const card = loadItinerary();
   if (card?.items) {
     for (const it of card.items) {
-      if (seenNames.has(it.spotName)) continue;
-      seenNames.add(it.spotName);
-      merged.push({
+      if (!selected.has(it.spotId)) continue;
+      pushItem({
         id: it.spotId,
         time: scheduleToTime(it.scheduleTime),
         name: it.spotName,
-        reason: `Đã lưu · ${it.category}`,
+        reason: `Đã chọn · ${it.category}`,
         durationMinutes: 30,
         warning: null,
       });
     }
   }
 
-  for (const spotId of loadSelectedSpotIds()) {
+  const board = loadBoardItinerary();
+  if (board) {
+    for (const it of board) {
+      const locId = resolveBoardLocationId(it);
+      if (!locId || !selected.has(locId)) continue;
+      pushItem(it);
+    }
+  }
+
+  for (const spotId of selected) {
     const loc = getLocationById(spotId);
     if (!loc || seenNames.has(loc.name)) continue;
-    seenNames.add(loc.name);
-    merged.push({
+    pushItem({
       id: loc.id,
-      time: "09:00",
+      time: scheduleToTime(
+        card?.items.find((i) => i.spotId === spotId)?.scheduleTime
+      ),
       name: loc.name,
       reason: "User đã chọn (+ Chọn)",
       durationMinutes: 30,

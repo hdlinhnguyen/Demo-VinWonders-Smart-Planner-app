@@ -46,6 +46,13 @@ import {
   type PositionSnapshot,
 } from "../data/positionChange";
 import {
+  getChatNetworkErrorMessage,
+  isBrowserOffline,
+  OFFLINE_CHAT_MESSAGE,
+  sanitizeAssistantDisplayContent,
+  toUserFacingChatError,
+} from "../data/networkStatus";
+import {
   QUICK_CHIPS,
   VINWONDERS_SPOTS,
   WELCOME_MESSAGE,
@@ -529,6 +536,15 @@ export default function ChatInterface() {
 
     const assistantId = createId();
 
+    if (isBrowserOffline()) {
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: OFFLINE_CHAT_MESSAGE },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const livePosition = userPositionRef.current;
       const res = await fetch("/api/chat", {
@@ -554,13 +570,14 @@ export default function ChatInterface() {
         } catch {
           /* ignore */
         }
-        if (res.status === 429) {
+        const userErr = toUserFacingChatError(errMsg);
+        if (res.status === 429 && userErr === errMsg) {
           setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
           setInput(content);
           setInputError(errMsg);
           return;
         }
-        throw new Error(errMsg);
+        throw new Error(userErr);
       }
 
       const contentType = res.headers.get("Content-Type") ?? "";
@@ -607,7 +624,9 @@ export default function ChatInterface() {
         if (value) {
           full += decoder.decode(value, { stream: true });
           // Strip JSON block from display text while streaming
-          const display = parseAssistantContent(stripItineraryBlock(full)).text;
+          const display = sanitizeAssistantDisplayContent(
+            parseAssistantContent(stripItineraryBlock(full)).text
+          );
           setLastQuery(display);
           setMessages((prev) =>
             prev.map((m) =>
@@ -630,14 +649,17 @@ export default function ChatInterface() {
 
       markReplyPosition();
     } catch (err) {
-      const msg =
+      const raw =
         err instanceof Error
           ? err.message
           : "Xin lỗi, đã có lỗi. Vui lòng thử lại.";
+      const msg =
+        getChatNetworkErrorMessage(err) ?? toUserFacingChatError(raw);
       setMessages((prev) => [
         ...prev,
         { id: assistantId, role: "assistant", content: msg },
       ]);
+      if (msg === OFFLINE_CHAT_MESSAGE) setInputError(msg);
     } finally {
       setIsLoading(false);
     }

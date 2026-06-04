@@ -39,6 +39,8 @@ import {
   filterSpotsByText,
   type Spot,
 } from "../data/spots";
+import { parseItineraryFromText, stripItineraryBlock, flagItineraryItems, extractConstraints, type ItineraryItem } from "@/bot/tools";
+import ItineraryBoard, { loadSavedItinerary } from "./ItineraryBoard";
 
 type Role = "user" | "assistant";
 
@@ -46,6 +48,8 @@ interface Message {
   id: string;
   role: Role;
   content: string;
+  pathType?: string;
+  itinerary?: ItineraryItem[];
 }
 
 interface Conversation {
@@ -94,8 +98,73 @@ function detectWarnings(content: string, messages: Message[]): string[] {
   return warnings;
 }
 
-function renderMarkdown(text: string) {
-  return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+function renderMarkdown(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const line = raw.trimEnd();
+
+    // Headings ####, ###, ##, #
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const content = inlineMarkdown(headingMatch[2]);
+      const cls =
+        level <= 2
+          ? "mt-4 mb-1 text-sm font-bold text-foreground"
+          : "mt-3 mb-0.5 text-sm font-semibold text-foreground";
+      out.push(`<p class="${cls}">${content}</p>`);
+      i++;
+      continue;
+    }
+
+    // Unordered list block
+    if (/^[ \t]*[-*]\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[ \t]*[-*]\s/.test(lines[i])) {
+        items.push(`<li>${inlineMarkdown(lines[i].replace(/^[ \t]*[-*]\s/, "").trimEnd())}</li>`);
+        i++;
+      }
+      out.push(`<ul class="my-1.5 ml-4 list-disc space-y-0.5">${items.join("")}</ul>`);
+      continue;
+    }
+
+    // Ordered list block
+    if (/^[ \t]*\d+\.\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[ \t]*\d+\.\s/.test(lines[i])) {
+        items.push(`<li>${inlineMarkdown(lines[i].replace(/^[ \t]*\d+\.\s/, "").trimEnd())}</li>`);
+        i++;
+      }
+      out.push(`<ol class="my-1.5 ml-4 list-decimal space-y-0.5">${items.join("")}</ol>`);
+      continue;
+    }
+
+    // Blank line → spacing
+    if (line.trim() === "") {
+      out.push(`<div class="h-2"></div>`);
+      i++;
+      continue;
+    }
+
+    // Normal paragraph line
+    out.push(`<span>${inlineMarkdown(line)}</span><br />`);
+    i++;
+  }
+
+  return out.join("");
+}
+
+function inlineMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+?)\*/g, "<em>$1</em>")
+    .replace(/_([^_]+?)_/g, "<em>$1</em>")
+    .replace(/`([^`]+)`/g, '<code class="rounded bg-black/5 px-1 py-0.5 text-[12px] font-mono">$1</code>');
 }
 
 export default function ChatInterface() {
@@ -108,6 +177,8 @@ export default function ChatInterface() {
   const [lastQuery, setLastQuery] = useState("");
   const [pendingNavSuggestion, setPendingNavSuggestion] =
     useState<NavSuggestion | null>(null);
+  // messageId → editable itinerary items
+  const [itineraries, setItineraries] = useState<Record<string, ItineraryItem[]>>({});
   const [positionMovedNotice, setPositionMovedNotice] = useState<string | null>(
     null
   );
@@ -379,6 +450,7 @@ export default function ChatInterface() {
             updatedAt: Date.now(),
           },
           lastReplyPosition: positionAtLastReplyRef.current,
+          savedItinerary: loadSavedItinerary(),
         }),
       });
 
@@ -418,10 +490,12 @@ export default function ChatInterface() {
 
       if (!res.body) throw new Error("Phản hồi không hợp lệ");
 
+      const pathType = res.headers.get("X-Path-Type") ?? undefined;
+
       setPendingNavSuggestion(null);
       setMessages((prev) => [
         ...prev,
-        { id: assistantId, role: "assistant", content: "" },
+        { id: assistantId, role: "assistant", content: "", pathType },
       ]);
 
       const reader = res.body.getReader();
@@ -434,14 +508,28 @@ export default function ChatInterface() {
         done = streamDone;
         if (value) {
           full += decoder.decode(value, { stream: true });
-          setLastQuery(full);
+          // Strip JSON block from display text while streaming
+          const display = stripItineraryBlock(full);
+          setLastQuery(display);
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, content: full } : m
+              m.id === assistantId ? { ...m, content: display } : m
             )
           );
         }
       }
+
+      // Parse itinerary from the full (unstripped) response
+      const parsed = parseItineraryFromText(full);
+      if (parsed) {
+        const constraints = extractConstraints(
+          [...messages, userMsg, { id: assistantId, role: "assistant" as Role, content: full }]
+            .map((m) => ({ role: m.role, content: m.content }))
+        );
+        const flagged = flagItineraryItems(parsed, constraints);
+        setItineraries((prev) => ({ ...prev, [assistantId]: flagged }));
+      }
+
       markReplyPosition();
     } catch (err) {
       const msg =
@@ -495,6 +583,10 @@ export default function ChatInterface() {
     inputWordCount >= CHAT_LIMITS.warnUserMessageWords ||
     inputWordCount >= CHAT_LIMITS.maxUserMessageWords - 10;
 
+  function handleSwapActivity(item: ItineraryItem) {
+    sendMessage(`Hoạt động "${item.name}" không phù hợp, hãy gợi ý hoạt động thay thế phù hợp hơn`);
+  }
+
   function handleNavConfirm() {
     if (!pendingNavSuggestion || isLoading) return;
     const { id, name } = pendingNavSuggestion;
@@ -511,6 +603,7 @@ export default function ChatInterface() {
   function resetChat() {
     saveCurrentChat();
     setMessages([INITIAL_MESSAGE]);
+    setItineraries({});
     setSelectedIds(new Set());
     setLastQuery("");
     setInput("");
@@ -628,9 +721,14 @@ export default function ChatInterface() {
                   <AssistantMessage
                     content={m.content}
                     warnings={detectWarnings(m.content, messages)}
+                    itinerary={itineraries[m.id]}
+                    onItineraryChange={(items) =>
+                      setItineraries((prev) => ({ ...prev, [m.id]: items }))
+                    }
                     onSwapActivity={() =>
                       sendMessage("Hoạt động này không phù hợp, gợi ý trò khác phù hợp hơn")
                     }
+                    onSwapItem={handleSwapActivity}
                   />
                 ) : (
                   <p className="ml-auto max-w-[85%] rounded-2xl bg-[#f3f4f6] px-4 py-2.5 text-sm leading-relaxed">
@@ -812,11 +910,17 @@ function PositionMovedNotice({ content }: { content: string }) {
 function AssistantMessage({
   content,
   warnings,
+  itinerary,
+  onItineraryChange,
   onSwapActivity,
+  onSwapItem,
 }: {
   content: string;
   warnings?: string[];
+  itinerary?: ItineraryItem[];
+  onItineraryChange?: (items: ItineraryItem[]) => void;
   onSwapActivity?: () => void;
+  onSwapItem?: (item: ItineraryItem) => void;
 }) {
   if (!content) return <TypingIndicator />;
 
@@ -825,7 +929,7 @@ function AssistantMessage({
       <div
         className="chat-markdown text-sm leading-relaxed text-foreground/90"
         dangerouslySetInnerHTML={{
-          __html: renderMarkdown(content).replace(/\n/g, "<br />"),
+          __html: renderMarkdown(content),
         }}
       />
 
@@ -845,6 +949,14 @@ function AssistantMessage({
             </button>
           )}
         </div>
+      )}
+
+      {itinerary && itinerary.length > 0 && onItineraryChange && onSwapItem && (
+        <ItineraryBoard
+          items={itinerary}
+          onChange={onItineraryChange}
+          onSwap={onSwapItem}
+        />
       )}
 
       <button

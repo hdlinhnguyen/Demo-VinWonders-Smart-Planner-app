@@ -34,15 +34,28 @@ export const HAPPY_PATH_PROMPT = `
 ${VINWONDERS_SYSTEM_PROMPT}
 
 --- CHẾ ĐỘ: TẠO LỊCH TRÌNH ---
-User đã cung cấp đủ: thời gian vào/ra, nhóm đi (số người, độ tuổi), sở thích.
-Nhiệm vụ: Tạo lịch trình cá nhân hóa theo mốc giờ gồm:
-- Khu vui chơi phù hợp nhóm
-- Show / biểu diễn theo giờ
-- Điểm ăn uống
-- Thời gian nghỉ hợp lý
-- Lý do gợi ý từng hoạt động
+User đã cung cấp đủ thông tin. Hãy:
+1. Viết một đoạn văn ngắn giới thiệu lịch trình (2-3 câu).
+2. SAU ĐÓ, NGAY LẬP TỨC xuất khối JSON theo đúng format bên dưới — KHÔNG thêm bất kỳ văn bản nào sau khối JSON.
 
-Format: HH:MM – [Tên địa điểm] – [Lý do ngắn]
+Format JSON BẮT BUỘC (copy chính xác cấu trúc này):
+\`\`\`json
+[
+  {
+    "time": "09:00",
+    "name": "Tên địa điểm",
+    "reason": "Lý do ngắn gọn tại sao phù hợp",
+    "durationMinutes": 45
+  }
+]
+\`\`\`
+
+Quy tắc:
+- "time" luôn dạng "HH:MM" (24 giờ)
+- "durationMinutes" là số nguyên (phút)
+- Tối thiểu 6 hoạt động, tối đa 12
+- KHÔNG thêm field nào khác ngoài 4 field trên
+- Khối JSON phải bắt đầu bằng \`\`\`json và kết thúc bằng \`\`\`
 `;
 
 // ───────────────────────────────────────────
@@ -66,30 +79,33 @@ QUY TẮC: Chỉ tạo lịch trình sau khi có đủ thông tin nhóm và sứ
 // ───────────────────────────────────────────
 // FAILURE PATH - AI gợi ý hoạt động không phù hợp
 // ───────────────────────────────────────────
+const JSON_ITINERARY_INSTRUCTIONS = `
+Sau phần trả lời văn bản, LUÔN xuất khối JSON lịch trình đầy đủ theo format:
+\`\`\`json
+[
+  {
+    "time": "09:00",
+    "name": "Tên địa điểm",
+    "reason": "Lý do ngắn gọn",
+    "durationMinutes": 45
+  }
+]
+\`\`\`
+Chỉ 4 field, "time" dạng "HH:MM", KHÔNG thêm text sau \`\`\`.
+`;
+
 export const FAILURE_PATH_PROMPT = `
 ${VINWONDERS_SYSTEM_PROMPT}
 
 --- CHẾ ĐỘ: SỬA HOẠT ĐỘNG KHÔNG PHÙ HỢP ---
-Một hoặc nhiều hoạt động trong lịch trình không phù hợp với user (sức khỏe, độ tuổi, sở thích).
-Nhiệm vụ:
-- Xác nhận hoạt động nào bị đánh dấu cần thay thế
-- Gợi ý 2-3 hoạt động thay thế phù hợp hơn từ mock_data
-- Giải thích ngắn lý do phù hợp
-- Giữ nguyên phần lịch trình không bị ảnh hưởng
-`;
+Xác nhận hoạt động cần thay thế, gợi ý 2-3 hoạt động thay thế phù hợp hơn, giải thích ngắn lý do.
+Sau đó xuất lại TOÀN BỘ lịch trình đã cập nhật (giữ nguyên các hoạt động không bị ảnh hưởng).
+${JSON_ITINERARY_INSTRUCTIONS}`;
 
-// ───────────────────────────────────────────
-// CORRECTION PATH - User chủ động sửa lịch trình
-// ───────────────────────────────────────────
 export const CORRECTION_PATH_PROMPT = `
 ${VINWONDERS_SYSTEM_PROMPT}
 
 --- CHẾ ĐỘ: CẬP NHẬT LỊCH TRÌNH ---
-User muốn thay đổi một phần lịch trình đã tạo.
-Nhiệm vụ:
-- Cập nhật đúng phần user yêu cầu
-- Giữ nguyên các ràng buộc đã có (giờ vào/ra, nhóm, sức khỏe)
-- Kiểm tra xung đột thời gian sau khi sửa
-- Xuất lại toàn bộ lịch trình đã cập nhật
-- KHÔNG hỏi lại thông tin đã có trong phiên hiện tại
-`;
+Cập nhật đúng phần user yêu cầu, giữ ràng buộc đã có, kiểm tra xung đột thời gian.
+KHÔNG hỏi lại thông tin đã có. Xuất lại toàn bộ lịch trình sau khi sửa.
+${JSON_ITINERARY_INSTRUCTIONS}`;

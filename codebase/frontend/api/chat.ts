@@ -1,10 +1,8 @@
-import {
-  prepareMessagesForLLM,
-  validateUserMessage,
-} from "@/bot/chatLimits";
+import { validateUserMessage } from "@/bot/chatLimits";
 import { mapProviderError } from "@/bot/errors";
-import { streamOpenRouterReply } from "@/bot/openrouter";
-import type { ChatMessage, PathType } from "@/bot/types";
+import { runAgentStream } from "@/bot/agent";
+import type { ChatMessage } from "@/bot/types";
+import type { ItineraryItem } from "@/bot/tools";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
@@ -70,54 +68,25 @@ export function parseLastReplyPosition(body: unknown): PositionSnapshot | null {
   };
 }
 
-function streamPlainText(text: string): Response {
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode(text));
-      controller.close();
-    },
-  });
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
-    },
-  });
+export function parseSavedItinerary(body: unknown): ItineraryItem[] | null {
+  if (!body || typeof body !== "object") return null;
+  const raw = (body as { savedItinerary?: unknown }).savedItinerary;
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  return raw as ItineraryItem[];
 }
 
-function detectPathType(messages: ChatMessage[]): PathType | undefined {
-  const fullText = messages.map((m) => m.content).join(" ").toLowerCase();
-
-  const hasKids = /trẻ nhỏ|trẻ em|em bé|con nhỏ|bé/.test(fullText);
-  const hasKidsDetail = /tuổi|cm|chiều cao|\d+\s*tuổi/.test(fullText);
-
-  // Có trẻ em nhưng thiếu tuổi/chiều cao
-  if (hasKids && !hasKidsDetail) return "low-confidence";
-
-  // Có yêu cầu lịch trình nhưng thiếu số người hoặc thông tin sức khỏe
-  const wantsItinerary = /lịch trình|đi chơi|tham quan|chơi.*từ|từ.*đến/.test(fullText);
-  const hasGroupInfo = /\d+\s*người|nhóm|gia đình|cặp đôi|vợ chồng|một mình|mình đi/.test(fullText);
-  const hasHealthInfo = /sức khỏe|tim mạch|huyết áp|mang thai|không có vấn đề|bình thường|khỏe/.test(fullText);
-  const hasThrill = /cảm giác mạnh|mạo hiểm/.test(fullText);
-
-  // Muốn chơi cảm giác mạnh nhưng chưa khai báo nhóm hoặc sức khỏe
-  if (wantsItinerary && hasThrill && (!hasGroupInfo || !hasHealthInfo)) {
-    return "low-confidence";
-  }
-
-  // Muốn lịch trình nhưng chưa có thông tin nhóm
-  if (wantsItinerary && !hasGroupInfo) {
-    return "low-confidence";
-  }
-
-  return undefined;
+function formatSavedItineraryContext(items: ItineraryItem[]): string {
+  const lines = items.map(
+    (it) => `${it.time} – ${it.name}${it.warning ? ` [⚠️ ${it.warning}]` : ""} (${it.durationMinutes} phút): ${it.reason}`
+  );
+  return `## Lịch trình đã lưu của người dùng\n${lines.join("\n")}\nKhi người dùng hỏi về lịch trình này, hãy dùng thông tin trên làm cơ sở.`;
 }
 
 export async function handleChat(
   messages: ChatMessage[],
   userPosition?: SimulatedPosition | null,
-  lastReplyPosition?: PositionSnapshot | null
+  lastReplyPosition?: PositionSnapshot | null,
+  savedItinerary?: ItineraryItem[] | null
 ): Promise<Response> {
   if (messages.length === 0) {
     return Response.json(
@@ -168,61 +137,33 @@ export async function handleChat(
   } else if (!positionContext && movedNote) {
     positionContext = movedNote;
   }
+  if (savedItinerary && savedItinerary.length > 0) {
+    const itineraryNote = formatSavedItineraryContext(savedItinerary);
+    positionContext = positionContext
+      ? `${positionContext}\n\n${itineraryNote}`
+      : itineraryNote;
+  }
 
-  const llmMessages = prepareMessagesForLLM(
-    messages.map((m, i) =>
-      i === messages.length - 1 && m.role === "user"
-        ? { role: "user", content: lastUserContent }
-        : m
-    )
+  const agentMessages = messages.map((m, i) =>
+    i === messages.length - 1 && m.role === "user"
+      ? { role: "user" as const, content: lastUserContent }
+      : m
   );
 
-  const pathType = detectPathType(messages);
-  const encoder = new TextEncoder();
-  const generator = streamOpenRouterReply(
-    llmMessages,
-    undefined,
-    positionContext,
-    pathType
-  );
-
-  let first: IteratorResult<string, void>;
+  let agentResult: Awaited<ReturnType<typeof runAgentStream>>;
   try {
-    first = await generator.next();
+    agentResult = await runAgentStream(agentMessages, positionContext);
   } catch (err) {
     console.error("[api/chat]", err);
     const { status, message } = mapProviderError(err);
     return Response.json({ error: message }, { status });
   }
 
-  if (first.done) {
-    return Response.json(
-      { error: "OpenRouter không trả về nội dung" },
-      { status: 502 }
-    );
-  }
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      controller.enqueue(encoder.encode(first.value));
-      try {
-        for await (const chunk of generator) {
-          if (chunk) controller.enqueue(encoder.encode(chunk));
-        }
-        controller.close();
-      } catch (err) {
-        console.error("[api/chat] stream", err);
-        const { message } = mapProviderError(err);
-        controller.enqueue(encoder.encode(`\n\n⚠️ ${message}`));
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
+  return new Response(agentResult.stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",
+      "X-Path-Type": agentResult.pathType,
     },
   });
 }

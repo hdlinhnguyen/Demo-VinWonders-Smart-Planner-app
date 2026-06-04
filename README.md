@@ -32,6 +32,6 @@ Mở [http://localhost:3000](http://localhost:3000). Hướng dẫn chi tiết, 
 |---|---|
 | Nguyễn Hồ Diệu Linh & Nguyễn Thị Bích Duyên | Research / evidence | 
 | Nguyễn Thị Hiểu | SPEC |
-| Hoàng Đức Trường & Trần Hoàng Hà | Prototype |
+| Hoàng Đức Trường & Trần Hoàng Hà | Prototype, Implement UI, create code base, dev frontend |
 | Nguyễn Hoàng Tùng | Test / failure path |
 | Everyone | Demo script / repo |

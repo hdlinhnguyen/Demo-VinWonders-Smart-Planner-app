@@ -239,9 +239,18 @@ export function buildLocationsContext(): string {
       lines.push(
         `- **${loc.name}** (id: \`${loc.id}\`) [${loc.typeLabel}]`,
         `  ${loc.shortSummary ?? loc.description.slice(0, 100)}`,
+        `  Giờ (mock_data, từng điểm): ${loc.openingHours}`,
         `  Từ khóa: ${(loc.searchTerms ?? []).slice(0, 4).join(", ")}`
       );
     }
   }
+
+  lines.push(
+    "",
+    "### Dữ liệu KHÔNG có trong mock_data (không được bịa)",
+    "- Giá vé, combo, khuyến mãi cụ thể (VNĐ).",
+    "- Lịch show / suất biểu diễn / giờ diễn cụ thể.",
+    "- Tình trạng hàng đợi realtime, đông vắn theo phút."
+  );
   return lines.join("\n");
 }

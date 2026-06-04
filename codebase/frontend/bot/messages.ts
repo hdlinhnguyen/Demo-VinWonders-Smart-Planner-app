@@ -1,3 +1,4 @@
+import { buildHallucinationControlBlock } from "@/app/data/hallucinationControl";
 import {
   VINWONDERS_SYSTEM_PROMPT,
   HAPPY_PATH_PROMPT,
@@ -29,9 +30,16 @@ export function toLLMMessages(
     ? selectPrompt(pathType)
     : VINWONDERS_SYSTEM_PROMPT;
 
-  const systemContent = positionContext
-    ? `${basePrompt}\n\n## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
-    : basePrompt;
+  const hallucinationBlock = buildHallucinationControlBlock();
+  const systemContent = [
+    basePrompt,
+    hallucinationBlock,
+    positionContext
+      ? `## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   return [
     { role: "system" as const, content: systemContent },

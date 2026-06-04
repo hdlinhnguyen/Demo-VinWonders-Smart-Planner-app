@@ -19,6 +19,7 @@ import {
   type ChatCardEntry,
 } from "../data/chatCards";
 import {
+  buildSavedItineraryForApi,
   loadSelectedSpotIds,
   saveSelectedSpotIds,
   toggleSelectedSpotId,
@@ -51,8 +52,13 @@ import {
   filterSpotsByText,
   type Spot,
 } from "../data/spots";
+import {
+  getSpotsForZone,
+  getSuggestedSpotsNear,
+  getZoneNameForLocationId,
+} from "../data/spotList";
 import { parseItineraryFromText, stripItineraryBlock, flagItineraryItems, extractConstraints, type ItineraryItem } from "@/bot/tools";
-import ItineraryBoard, { loadSavedItinerary } from "./ItineraryBoard";
+import ItineraryBoard from "./ItineraryBoard";
 
 type Role = "user" | "assistant";
 
@@ -185,10 +191,80 @@ export default function ChatInterface() {
     setPositionMovedNotice(null);
   }
 
-  const visibleSpots = useMemo(
-    () => filterSpotsByText(lastQuery, VINWONDERS_SPOTS),
-    [lastQuery]
+  const [sideListSpots, setSideListSpots] = useState<Spot[] | null>(null);
+  const [listScheduleById, setListScheduleById] = useState<
+    Record<string, string>
+  >({});
+  const [listZoneFilter, setListZoneFilter] = useState<string | null>(() =>
+    getZoneNameForLocationId("amazon-van")
   );
+  const latestCardEntries = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role !== "assistant" || m.id === "welcome") continue;
+      const { text, cardPayload } = parseAssistantContent(m.content);
+      const entries = resolveChatCardEntries(text, cardPayload);
+      if (entries.length > 0) return entries;
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!latestCardEntries?.length) return;
+    setSideListSpots(latestCardEntries.map((e) => e.spot));
+    const times: Record<string, string> = {};
+    for (const e of latestCardEntries) {
+      if (e.scheduleTime) times[e.spot.id] = e.scheduleTime;
+    }
+    setListScheduleById(times);
+  }, [latestCardEntries]);
+
+  const visibleSpots = useMemo(() => {
+    if (sideListSpots && sideListSpots.length > 0) return sideListSpots;
+
+    const q = lastQuery.trim();
+    if (q) {
+      const matched = filterSpotsByText(q, VINWONDERS_SPOTS);
+      if (matched.length > 0) return matched;
+    }
+
+    if (listZoneFilter) {
+      return getSpotsForZone(listZoneFilter, {
+        x: userPosition.x,
+        y: userPosition.y,
+      });
+    }
+
+    return getSuggestedSpotsNear(userPosition.x, userPosition.y, 10);
+  }, [
+    sideListSpots,
+    lastQuery,
+    listZoneFilter,
+    userPosition.x,
+    userPosition.y,
+  ]);
+
+  const listFromChat = sideListSpots !== null && sideListSpots.length > 0;
+
+  const listCaption = useMemo(() => {
+    if (listFromChat) {
+      return `${visibleSpots.length} địa điểm từ lịch trình chat`;
+    }
+    if (listZoneFilter) {
+      return `${visibleSpots.length} gợi ý · khu ${listZoneFilter}`;
+    }
+    if (lastQuery.trim()) {
+      return `${visibleSpots.length} kết quả theo câu hỏi`;
+    }
+    return `${visibleSpots.length} địa điểm gợi ý gần bạn`;
+  }, [listFromChat, listZoneFilter, lastQuery, visibleSpots.length]);
+
+  function handleDestinationSelect(locationId: string) {
+    const zone = getZoneNameForLocationId(locationId);
+    if (zone) setListZoneFilter(zone);
+    setSideListSpots(null);
+    setListScheduleById({});
+  }
 
   const lastAssistant = [...messages]
     .reverse()
@@ -402,7 +478,10 @@ export default function ChatInterface() {
     }
 
     setLastQuery(content);
+    setSideListSpots(null);
+    setListScheduleById({});
     setDiscoveryOpen(true);
+    // Giữ listZoneFilter — user vẫn có thể lọc khu qua Select
 
     if (pendingNavSuggestion && isNavConfirm(content)) {
       const { id, name } = pendingNavSuggestion;
@@ -463,7 +542,7 @@ export default function ChatInterface() {
             updatedAt: Date.now(),
           },
           lastReplyPosition: positionAtLastReplyRef.current,
-          savedItinerary: loadSavedItinerary(),
+          savedItinerary: buildSavedItineraryForApi(),
         }),
       });
 
@@ -625,6 +704,9 @@ export default function ChatInterface() {
     setItineraries({});
     setSelectedIds(new Set());
     saveSelectedSpotIds(new Set());
+    setSideListSpots(null);
+    setListScheduleById({});
+    setListZoneFilter(getZoneNameForLocationId("amazon-van"));
     setItinerarySavedNotice(null);
     setLastQuery("");
     setInput("");
@@ -641,13 +723,13 @@ export default function ChatInterface() {
 
   return (
     <div
-      className="flex h-dvh overflow-hidden bg-background"
+      className="flex h-dvh overflow-hidden bg-transparent"
       style={
         { "--chat-panel-w": `${chatWidth}px` } as CSSProperties
       }
     >
       {/* ── Left: Chat panel — kéo cạnh phải để resize (desktop) ── */}
-      <section className="relative flex min-h-0 w-full min-w-0 flex-col bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
+      <section className="glass-panel relative flex min-h-0 w-full min-w-0 flex-col border-r lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
         {/* Logo */}
         <header className="flex items-center justify-between px-5 py-4">
           <span className="text-xl font-bold tracking-tight">
@@ -683,7 +765,7 @@ export default function ChatInterface() {
 
         {/* History drawer */}
         {historyOpen && (
-          <div className="absolute inset-0 z-50 flex flex-col bg-surface">
+          <div className="glass-panel absolute inset-0 z-50 flex flex-col">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <span className="text-sm font-semibold">Lịch sử trò chuyện</span>
               <button
@@ -759,7 +841,7 @@ export default function ChatInterface() {
                     onSwapItem={handleSwapActivity}
                   />
                 ) : (
-                  <p className="ml-auto max-w-[85%] rounded-2xl bg-[#f3f4f6] px-4 py-2.5 text-sm leading-relaxed">
+                  <p className="ml-auto max-w-[85%] rounded-2xl border border-white/50 bg-white/80 px-4 py-2.5 text-sm font-medium leading-relaxed text-foreground shadow-sm backdrop-blur-sm">
                     {m.content}
                   </p>
                 )}
@@ -821,9 +903,9 @@ export default function ChatInterface() {
         </div>
 
         {/* Composer — Layla "Ask anything..." */}
-        <footer className="border-t border-border px-4 py-4">
+        <footer className="border-t border-white/40 bg-white/40 px-4 py-4 backdrop-blur-md">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-[#fafafa] px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+            <div className="flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -833,7 +915,7 @@ export default function ChatInterface() {
                 aria-invalid={!!inputError}
                 aria-describedby="chat-input-hint"
                 placeholder="Hỏi ngắn gọn (vd: trạm y tế gần nhất)..."
-                className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-sm outline-none placeholder:text-muted"
+                className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-[var(--muted-soft)]"
               />
               <div className="flex shrink-0 items-center gap-1 pb-0.5">
                 <button
@@ -856,7 +938,7 @@ export default function ChatInterface() {
           </form>
           <div
             id="chat-input-hint"
-            className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10px] text-muted"
+            className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10px] text-[var(--muted-soft)]"
           >
             {inputError ? (
               <span className="text-red-600">{inputError}</span>
@@ -900,6 +982,9 @@ export default function ChatInterface() {
           onUseRoute={usePredefinedRoute}
           focusSpotId={mapFocusId}
           onFocusSpot={setMapFocusId}
+          scheduleTimesBySpotId={listScheduleById}
+          listCaption={listCaption}
+          onDestinationSelect={handleDestinationSelect}
         />
       </div>
 
@@ -928,6 +1013,9 @@ export default function ChatInterface() {
           onUseRoute={usePredefinedRoute}
           focusSpotId={mapFocusId}
           onFocusSpot={setMapFocusId}
+          scheduleTimesBySpotId={listScheduleById}
+          listCaption={listCaption}
+          onDestinationSelect={handleDestinationSelect}
         />
       </div>
     </div>

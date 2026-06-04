@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { ChatCardEntry } from "../data/chatCards";
 import { saveItineraryFromCards } from "../data/itineraryStorage";
-import SpotCard from "./SpotCard";
+import ChatSpotCardCompact from "./ChatSpotCardCompact";
 
 interface ChatSpotCardsProps {
   entries: ChatCardEntry[];
@@ -42,22 +42,17 @@ export default function ChatSpotCards({
 
   if (entries.length === 0) return null;
 
-  const hasSchedule = entries.some((e) => e.scheduleTime);
-
   return (
-    <div className="space-y-3 pt-1">
-      <p className="text-xs font-medium text-muted">
-        {entries.length} địa điểm
-        {hasSchedule ? " · có khung giờ lịch trình" : ""}
-        {" · "}
-        bấm + Chọn để lưu mục yêu thích
+    <div className="space-y-2 pt-1">
+      <p className="text-xs font-medium text-[var(--muted-soft)]">
+        {entries.length} địa điểm · xem card đầy đủ ở{" "}
+        <span className="font-semibold text-foreground">Bản đồ & địa điểm</span>{" "}
+        bên phải
       </p>
       {entries.map((entry) => (
-        <SpotCard
+        <ChatSpotCardCompact
           key={entry.spot.id}
-          spot={entry.spot}
-          scheduleTime={entry.scheduleTime}
-          compact
+          entry={entry}
           selected={selectedIds.has(entry.spot.id)}
           onToggle={() => onToggleSpot(entry)}
           onShowOnMap={() => onShowOnMap(entry)}

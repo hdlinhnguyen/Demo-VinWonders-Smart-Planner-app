@@ -6,6 +6,11 @@ import { checkChatSpam } from "@/bot/chatSpam";
 import { mapProviderError } from "@/bot/errors";
 import { runAgentStream } from "@/bot/agent";
 import type { ChatMessage } from "@/bot/types";
+import {
+  buildDeterministicSavedItineraryReply,
+  buildSavedItineraryAgentContext,
+  detectSavedItineraryQuery,
+} from "@/bot/savedItineraryAgent";
 import type { ItineraryItem } from "@/bot/tools";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
@@ -97,12 +102,21 @@ export function parseSavedItinerary(body: unknown): ItineraryItem[] | null {
   return raw as ItineraryItem[];
 }
 
-function formatSavedItineraryContext(items: ItineraryItem[]): string {
-  const lines = items.map(
-    (it) =>
-      `${it.time} – ${it.name}${it.warning ? ` [⚠️ ${it.warning}]` : ""} (${it.durationMinutes} phút): ${it.reason}`
-  );
-  return `## Lịch trình đã lưu của người dùng\n${lines.join("\n")}\nKhi người dùng hỏi về lịch trình này, hãy dùng thông tin trên làm cơ sở.`;
+function streamTextResponse(content: string, pathType = "saved-itinerary"): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode(content));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Path-Type": pathType,
+    },
+  });
 }
 
 export async function handleChat(
@@ -196,10 +210,21 @@ export async function handleChat(
     positionContext = movedNote;
   }
   if (savedItinerary && savedItinerary.length > 0) {
-    const itineraryNote = formatSavedItineraryContext(savedItinerary);
-    positionContext = positionContext
-      ? `${positionContext}\n\n${itineraryNote}`
-      : itineraryNote;
+    const itineraryNote = buildSavedItineraryAgentContext(savedItinerary);
+    if (itineraryNote) {
+      positionContext = positionContext
+        ? `${positionContext}\n\n${itineraryNote}`
+        : itineraryNote;
+    }
+  }
+
+  if (
+    savedItinerary &&
+    savedItinerary.length > 0 &&
+    detectSavedItineraryQuery(lastUserContent)
+  ) {
+    const reply = buildDeterministicSavedItineraryReply(savedItinerary);
+    if (reply) return streamTextResponse(reply);
   }
 
   const llmMessages = prepareMessagesForLLM(
@@ -212,7 +237,11 @@ export async function handleChat(
 
   let agentResult: Awaited<ReturnType<typeof runAgentStream>>;
   try {
-    agentResult = await runAgentStream(llmMessages, positionContext);
+    agentResult = await runAgentStream(
+      llmMessages,
+      positionContext,
+      savedItinerary
+    );
   } catch (err) {
     console.error("[api/chat]", err);
     const status =

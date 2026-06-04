@@ -4,7 +4,7 @@ import {
 } from "@/bot/chatLimits";
 import { mapProviderError } from "@/bot/errors";
 import { streamOpenRouterReply } from "@/bot/openrouter";
-import type { ChatMessage } from "@/bot/types";
+import type { ChatMessage, PathType } from "@/bot/types";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
@@ -86,6 +86,34 @@ function streamPlainText(text: string): Response {
   });
 }
 
+function detectPathType(messages: ChatMessage[]): PathType | undefined {
+  const fullText = messages.map((m) => m.content).join(" ").toLowerCase();
+
+  const hasKids = /trẻ nhỏ|trẻ em|em bé|con nhỏ|bé/.test(fullText);
+  const hasKidsDetail = /tuổi|cm|chiều cao|\d+\s*tuổi/.test(fullText);
+
+  // Có trẻ em nhưng thiếu tuổi/chiều cao
+  if (hasKids && !hasKidsDetail) return "low-confidence";
+
+  // Có yêu cầu lịch trình nhưng thiếu số người hoặc thông tin sức khỏe
+  const wantsItinerary = /lịch trình|đi chơi|tham quan|chơi.*từ|từ.*đến/.test(fullText);
+  const hasGroupInfo = /\d+\s*người|nhóm|gia đình|cặp đôi|vợ chồng|một mình|mình đi/.test(fullText);
+  const hasHealthInfo = /sức khỏe|tim mạch|huyết áp|mang thai|không có vấn đề|bình thường|khỏe/.test(fullText);
+  const hasThrill = /cảm giác mạnh|mạo hiểm/.test(fullText);
+
+  // Muốn chơi cảm giác mạnh nhưng chưa khai báo nhóm hoặc sức khỏe
+  if (wantsItinerary && hasThrill && (!hasGroupInfo || !hasHealthInfo)) {
+    return "low-confidence";
+  }
+
+  // Muốn lịch trình nhưng chưa có thông tin nhóm
+  if (wantsItinerary && !hasGroupInfo) {
+    return "low-confidence";
+  }
+
+  return undefined;
+}
+
 export async function handleChat(
   messages: ChatMessage[],
   userPosition?: SimulatedPosition | null,
@@ -149,6 +177,7 @@ export async function handleChat(
     )
   );
 
+  const pathType = detectPathType(messages);
   const encoder = new TextEncoder();
   const generator = streamOpenRouterReply(
     llmMessages,

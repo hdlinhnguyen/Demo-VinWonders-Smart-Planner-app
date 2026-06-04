@@ -37,10 +37,15 @@ npm install
 Tạo file **`frontend/.env`** hoặc **`frontend/.env.local`**:
 
 ```env
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+
+# Hoặc OpenRouter (khi không điền OPENAI_API_KEY)
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
+- Có `OPENAI_API_KEY` → gọi trực tiếp [OpenAI API](https://platform.openai.com/); không có → dùng OpenRouter.
 - Copy từ `.env.example` nếu cần.
 - **Không** commit file chứa key thật (đã nằm trong `.gitignore`).
 - Danh sách model: [openrouter.ai/models](https://openrouter.ai/models) — model miễn phí thường có hậu tố `:free`.
@@ -55,7 +60,7 @@ npm run dev
 Mở trình duyệt: [http://localhost:3000](http://localhost:3000)
 
 - Gõ tin nhắn hoặc bấm gợi ý sẵn trên màn hình chào.
-- Phản hồi được **stream** từ OpenRouter.
+- Phản hồi được **stream** từ OpenAI hoặc OpenRouter.
 
 ### Nếu port 3000 đang bận
 

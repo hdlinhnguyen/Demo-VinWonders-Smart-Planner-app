@@ -1,4 +1,4 @@
-import { streamOpenRouterReply } from "./openrouter";
+import { streamLLMReply } from "./provider";
 import { detectPath } from "./tools";
 import { prepareMessagesForLLM } from "@/bot/chatLimits";
 import type { ChatMessage, PathType } from "./types";
@@ -45,9 +45,8 @@ export async function runAgentStream(
     augmented.map(m => ({ role: m.role, content: m.content }))
   );
 
-  const generator = streamOpenRouterReply(
+  const generator = streamLLMReply(
     llmMessages,
-    undefined,
     positionContext,
     pathType
   );

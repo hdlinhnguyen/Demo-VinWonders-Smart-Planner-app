@@ -9,8 +9,20 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import ChatMarkdown from "./ChatMarkdown";
+import ChatSpotCards from "./ChatSpotCards";
 import DiscoveryPanel from "./DiscoveryPanel";
 import ResizeHandle from "./ResizeHandle";
+import {
+  parseAssistantContent,
+  resolveChatCardEntries,
+  type ChatCardEntry,
+} from "../data/chatCards";
+import {
+  loadSelectedSpotIds,
+  saveSelectedSpotIds,
+  toggleSelectedSpotId,
+} from "../data/itineraryStorage";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useRouteSimulation } from "../hooks/useRouteSimulation";
 import type { NavSuggestion } from "../data/navConfirmation";
@@ -98,75 +110,6 @@ function detectWarnings(content: string, messages: Message[]): string[] {
   return warnings;
 }
 
-function renderMarkdown(text: string): string {
-  const lines = text.split("\n");
-  const out: string[] = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const raw = lines[i];
-    const line = raw.trimEnd();
-
-    // Headings ####, ###, ##, #
-    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const content = inlineMarkdown(headingMatch[2]);
-      const cls =
-        level <= 2
-          ? "mt-4 mb-1 text-sm font-bold text-foreground"
-          : "mt-3 mb-0.5 text-sm font-semibold text-foreground";
-      out.push(`<p class="${cls}">${content}</p>`);
-      i++;
-      continue;
-    }
-
-    // Unordered list block
-    if (/^[ \t]*[-*]\s/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^[ \t]*[-*]\s/.test(lines[i])) {
-        items.push(`<li>${inlineMarkdown(lines[i].replace(/^[ \t]*[-*]\s/, "").trimEnd())}</li>`);
-        i++;
-      }
-      out.push(`<ul class="my-1.5 ml-4 list-disc space-y-0.5">${items.join("")}</ul>`);
-      continue;
-    }
-
-    // Ordered list block
-    if (/^[ \t]*\d+\.\s/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^[ \t]*\d+\.\s/.test(lines[i])) {
-        items.push(`<li>${inlineMarkdown(lines[i].replace(/^[ \t]*\d+\.\s/, "").trimEnd())}</li>`);
-        i++;
-      }
-      out.push(`<ol class="my-1.5 ml-4 list-decimal space-y-0.5">${items.join("")}</ol>`);
-      continue;
-    }
-
-    // Blank line → spacing
-    if (line.trim() === "") {
-      out.push(`<div class="h-2"></div>`);
-      i++;
-      continue;
-    }
-
-    // Normal paragraph line
-    out.push(`<span>${inlineMarkdown(line)}</span><br />`);
-    i++;
-  }
-
-  return out.join("");
-}
-
-function inlineMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.+?)__/g, "<strong>$1</strong>")
-    .replace(/\*([^*]+?)\*/g, "<em>$1</em>")
-    .replace(/_([^_]+?)_/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, '<code class="rounded bg-black/5 px-1 py-0.5 text-[12px] font-mono">$1</code>');
-}
-
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
@@ -184,6 +127,10 @@ export default function ChatInterface() {
   );
   const [historyOpen, setHistoryOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [mapFocusId, setMapFocusId] = useState<string | null>(null);
+  const [itinerarySavedNotice, setItinerarySavedNotice] = useState<
+    string | null
+  >(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width: chatWidth, startDrag } = useResizablePanel({
@@ -268,6 +215,10 @@ export default function ChatInterface() {
     userPosition.nearLocationName,
     previewNavigation,
   ]);
+
+  useEffect(() => {
+    setSelectedIds(loadSelectedSpotIds());
+  }, []);
 
   useEffect(() => {
     try {
@@ -370,13 +321,38 @@ export default function ChatInterface() {
     previewNavigation(id, name);
   }
 
+  function focusSpotOnMap(spot: Spot) {
+    setMapFocusId(spot.id);
+    setDiscoveryOpen(true);
+  }
+
+  function handleChatShowDirections(spot: Spot) {
+    focusSpotOnMap(spot);
+    handleShowDirections(spot.id, spot.name);
+  }
+
+  function handleCardShowOnMap(entry: ChatCardEntry) {
+    focusSpotOnMap(entry.spot);
+  }
+
+  function handleCardShowDirections(entry: ChatCardEntry) {
+    handleChatShowDirections(entry.spot);
+  }
+
+  function handleItinerarySaved(count: number) {
+    setItinerarySavedNotice(
+      `Đã lưu lịch trình (${count} địa điểm) vào thiết bị`
+    );
+    window.setTimeout(() => setItinerarySavedNotice(null), 5000);
+  }
+
   function toggleSpot(spot: Spot) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(spot.id)) next.delete(spot.id);
-      else next.add(spot.id);
-      return next;
-    });
+    const next = toggleSelectedSpotId(spot.id);
+    setSelectedIds(next);
+  }
+
+  function toggleCardEntry(entry: ChatCardEntry) {
+    toggleSpot(entry.spot);
   }
 
   async function sendMessage(text: string) {
@@ -509,7 +485,7 @@ export default function ChatInterface() {
         if (value) {
           full += decoder.decode(value, { stream: true });
           // Strip JSON block from display text while streaming
-          const display = stripItineraryBlock(full);
+          const display = parseAssistantContent(stripItineraryBlock(full)).text;
           setLastQuery(display);
           setMessages((prev) =>
             prev.map((m) =>
@@ -605,6 +581,8 @@ export default function ChatInterface() {
     setMessages([INITIAL_MESSAGE]);
     setItineraries({});
     setSelectedIds(new Set());
+    saveSelectedSpotIds(new Set());
+    setItinerarySavedNotice(null);
     setLastQuery("");
     setInput("");
     setPendingNavSuggestion(null);
@@ -719,12 +697,19 @@ export default function ChatInterface() {
               <div key={m.id} className="animate-in">
                 {m.role === "assistant" ? (
                   <AssistantMessage
+                    messageId={m.id}
                     content={m.content}
+                    enableSpotCards={m.id !== "welcome"}
+                    selectedIds={selectedIds}
                     warnings={detectWarnings(m.content, messages)}
                     itinerary={itineraries[m.id]}
                     onItineraryChange={(items) =>
                       setItineraries((prev) => ({ ...prev, [m.id]: items }))
                     }
+                    onToggleEntry={toggleCardEntry}
+                    onShowOnMap={handleCardShowOnMap}
+                    onShowDirections={handleCardShowDirections}
+                    onItinerarySaved={handleItinerarySaved}
                     onSwapActivity={() =>
                       sendMessage("Hoạt động này không phù hợp, gợi ý trò khác phù hợp hơn")
                     }
@@ -742,6 +727,12 @@ export default function ChatInterface() {
               messages[messages.length - 1]?.role === "user" && (
                 <TypingIndicator />
               )}
+
+            {itinerarySavedNotice && !isLoading && (
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-xs font-medium text-green-900">
+                {itinerarySavedNotice}
+              </div>
+            )}
 
             {positionMovedNotice && !isLoading && (
               <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-950">
@@ -864,6 +855,8 @@ export default function ChatInterface() {
           onGoToCoords={goToCoords}
           onTeleport={teleportToLocation}
           onUseRoute={usePredefinedRoute}
+          focusSpotId={mapFocusId}
+          onFocusSpot={setMapFocusId}
         />
       </div>
 
@@ -890,6 +883,8 @@ export default function ChatInterface() {
           onGoToCoords={goToCoords}
           onTeleport={teleportToLocation}
           onUseRoute={usePredefinedRoute}
+          focusSpotId={mapFocusId}
+          onFocusSpot={setMapFocusId}
         />
       </div>
     </div>
@@ -898,40 +893,65 @@ export default function ChatInterface() {
 
 function PositionMovedNotice({ content }: { content: string }) {
   return (
-    <div
-      className="chat-markdown"
-      dangerouslySetInnerHTML={{
-        __html: renderMarkdown(content).replace(/\n/g, "<br />"),
-      }}
-    />
+    <div className="chat-markdown">
+      <ChatMarkdown content={content} />
+    </div>
   );
 }
 
 function AssistantMessage({
+  messageId,
   content,
+  enableSpotCards = true,
+  selectedIds,
   warnings,
   itinerary,
   onItineraryChange,
+  onToggleEntry,
+  onShowOnMap,
+  onShowDirections,
+  onItinerarySaved,
   onSwapActivity,
   onSwapItem,
 }: {
+  messageId: string;
   content: string;
+  enableSpotCards?: boolean;
+  selectedIds: Set<string>;
   warnings?: string[];
   itinerary?: ItineraryItem[];
   onItineraryChange?: (items: ItineraryItem[]) => void;
+  onToggleEntry: (entry: ChatCardEntry) => void;
+  onShowOnMap: (entry: ChatCardEntry) => void;
+  onShowDirections: (entry: ChatCardEntry) => void;
+  onItinerarySaved?: (count: number) => void;
   onSwapActivity?: () => void;
   onSwapItem?: (item: ItineraryItem) => void;
 }) {
   if (!content) return <TypingIndicator />;
 
+  const { text, cardPayload } = parseAssistantContent(content);
+  const entries = enableSpotCards
+    ? resolveChatCardEntries(text, cardPayload)
+    : [];
+
   return (
     <div className="space-y-2">
-      <div
-        className="chat-markdown text-sm leading-relaxed text-foreground/90"
-        dangerouslySetInnerHTML={{
-          __html: renderMarkdown(content),
-        }}
-      />
+      <div className="chat-markdown">
+        <ChatMarkdown content={text} />
+      </div>
+
+      {entries.length > 0 && (
+        <ChatSpotCards
+          entries={entries}
+          messageId={messageId}
+          selectedIds={selectedIds}
+          onToggleSpot={onToggleEntry}
+          onShowOnMap={onShowOnMap}
+          onShowDirections={onShowDirections}
+          onItinerarySaved={onItinerarySaved}
+        />
+      )}
 
       {/* Cảnh báo */}
       {warnings && warnings.length > 0 && (
@@ -963,7 +983,7 @@ function AssistantMessage({
         type="button"
         className="text-muted hover:text-foreground"
         aria-label="Sao chép"
-        onClick={() => navigator.clipboard?.writeText(content)}
+        onClick={() => navigator.clipboard?.writeText(text)}
       >
         <CopyIcon className="h-4 w-4" />
       </button>

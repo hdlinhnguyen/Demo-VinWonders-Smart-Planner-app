@@ -48,6 +48,16 @@ interface Message {
   content: string;
 }
 
+interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  savedAt: number;
+}
+
+const STORAGE_ACTIVE = "vinwonders_chat_history";
+const STORAGE_HISTORY = "vinwonders_conversations";
+
 const INITIAL_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
@@ -101,6 +111,8 @@ export default function ChatInterface() {
   const [positionMovedNotice, setPositionMovedNotice] = useState<string | null>(
     null
   );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width: chatWidth, startDrag } = useResizablePanel({
@@ -188,10 +200,34 @@ export default function ChatInterface() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("vinwonders_chat_history");
+      const savedHistory = localStorage.getItem(STORAGE_HISTORY);
+      const existing: Conversation[] = savedHistory ? JSON.parse(savedHistory) : [];
+
+      // Move any active session from last visit into history
+      const saved = localStorage.getItem(STORAGE_ACTIVE);
       if (saved) {
         const parsed = JSON.parse(saved) as Message[];
-        if (parsed.length > 0) setMessages(parsed);
+        const real = parsed.filter((m) => m.id !== "welcome");
+        if (real.length > 0) {
+          const firstUser = real.find((m) => m.role === "user");
+          const title = firstUser
+            ? firstUser.content.slice(0, 48) + (firstUser.content.length > 48 ? "…" : "")
+            : "Cuộc trò chuyện";
+          const conv: Conversation = {
+            id: createId(),
+            title,
+            messages: parsed,
+            savedAt: Date.now(),
+          };
+          const updated = [conv, ...existing].slice(0, 20);
+          localStorage.setItem(STORAGE_HISTORY, JSON.stringify(updated));
+          setConversations(updated);
+        } else {
+          setConversations(existing);
+        }
+        localStorage.removeItem(STORAGE_ACTIVE);
+      } else {
+        setConversations(existing);
       }
     } catch {
       // ignore parse/storage errors
@@ -200,11 +236,51 @@ export default function ChatInterface() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("vinwonders_chat_history", JSON.stringify(messages));
+      localStorage.setItem(STORAGE_ACTIVE, JSON.stringify(messages));
     } catch {
       // ignore storage errors (e.g. private mode quota)
     }
   }, [messages]);
+
+  function saveConversations(updated: Conversation[]) {
+    setConversations(updated);
+    try {
+      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  }
+
+  function saveCurrentChat() {
+    const real = messages.filter((m) => m.id !== "welcome");
+    if (real.length === 0) return;
+    const firstUser = real.find((m) => m.role === "user");
+    const title = firstUser
+      ? firstUser.content.slice(0, 48) + (firstUser.content.length > 48 ? "…" : "")
+      : "Cuộc trò chuyện";
+    const conv: Conversation = {
+      id: createId(),
+      title,
+      messages,
+      savedAt: Date.now(),
+    };
+    saveConversations([conv, ...conversations].slice(0, 20));
+  }
+
+  function loadConversation(conv: Conversation) {
+    setMessages(conv.messages);
+    setLastQuery("");
+    setInput("");
+    setPendingNavSuggestion(null);
+    setPositionMovedNotice(null);
+    positionAtLastReplyRef.current = null;
+    cancelNavigation();
+    setHistoryOpen(false);
+  }
+
+  function deleteConversation(id: string) {
+    saveConversations(conversations.filter((c) => c.id !== id));
+  }
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -433,6 +509,7 @@ export default function ChatInterface() {
   }
 
   function resetChat() {
+    saveCurrentChat();
     setMessages([INITIAL_MESSAGE]);
     setSelectedIds(new Set());
     setLastQuery("");
@@ -442,7 +519,7 @@ export default function ChatInterface() {
     positionAtLastReplyRef.current = null;
     cancelNavigation();
     try {
-      localStorage.removeItem("vinwonders_chat_history");
+      localStorage.removeItem(STORAGE_ACTIVE);
     } catch {
       // ignore
     }
@@ -456,7 +533,7 @@ export default function ChatInterface() {
       }
     >
       {/* ── Left: Chat panel — kéo cạnh phải để resize (desktop) ── */}
-      <section className="flex min-h-0 w-full min-w-0 flex-col bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
+      <section className="relative flex min-h-0 w-full min-w-0 flex-col bg-surface lg:w-[var(--chat-panel-w)] lg:min-w-[300px] lg:max-w-[50vw] lg:shrink-0">
         {/* Logo */}
         <header className="flex items-center justify-between px-5 py-4">
           <span className="text-xl font-bold tracking-tight">
@@ -470,6 +547,14 @@ export default function ChatInterface() {
             >
               Khám phá
             </button>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              className="text-xs text-muted hover:text-foreground"
+              title="Lịch sử trò chuyện"
+            >
+              <HistoryIcon className="h-4 w-4" />
+            </button>
             {messages.length > 1 && (
               <button
                 type="button"
@@ -481,6 +566,58 @@ export default function ChatInterface() {
             )}
           </div>
         </header>
+
+        {/* History drawer */}
+        {historyOpen && (
+          <div className="absolute inset-0 z-50 flex flex-col bg-surface">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <span className="text-sm font-semibold">Lịch sử trò chuyện</span>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(false)}
+                className="text-muted hover:text-foreground"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {conversations.length === 0 ? (
+                <p className="text-sm text-muted py-4 text-center">Chưa có lịch sử</p>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className="flex items-start justify-between gap-2 rounded-xl border border-border px-4 py-3 hover:bg-black/5"
+                  >
+                    <button
+                      type="button"
+                      className="flex-1 text-left"
+                      onClick={() => loadConversation(conv)}
+                    >
+                      <p className="text-sm font-medium leading-snug line-clamp-2">{conv.title}</p>
+                      <p className="mt-0.5 text-[10px] text-muted">
+                        {new Date(conv.savedAt).toLocaleString("vi-VN", {
+                          day: "2-digit", month: "2-digit", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                        {" · "}
+                        {conv.messages.filter((m) => m.role === "user").length} tin
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteConversation(conv.id)}
+                      className="shrink-0 text-muted hover:text-red-500 mt-0.5"
+                      aria-label="Xoá"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div ref={scrollRef} className="scroll-area flex-1 overflow-y-auto px-5">
@@ -554,7 +691,7 @@ export default function ChatInterface() {
         {/* Composer — Layla "Ask anything..." */}
         <footer className="border-t border-border px-4 py-4">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-end gap-2 rounded-2xl border border-border bg-[#fafafa] px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-[#fafafa] px-3 py-2 shadow-sm focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -587,27 +724,20 @@ export default function ChatInterface() {
           </form>
           <div
             id="chat-input-hint"
-            className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-0.5 text-[10px]"
+            className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10px] text-muted"
           >
-            <span className={inputError ? "text-red-600" : "text-muted"}>
-              {inputError ??
-                `Tối đa ${CHAT_LIMITS.maxUserMessageWords} từ · ${CHAT_LIMITS.maxHistoryMessages} tin gần nhất gửi AI`}
-            </span>
-            {showInputHint && !inputError && (
-              <span
-                className={
-                  inputWordCount >= CHAT_LIMITS.maxUserMessageWords
-                    ? "text-orange-600"
-                    : "text-muted"
-                }
-              >
+            {inputError ? (
+              <span className="text-red-600">{inputError}</span>
+            ) : showInputHint ? (
+              <span className={inputWordCount >= CHAT_LIMITS.maxUserMessageWords ? "text-orange-600" : "text-muted"}>
                 {inputWordCount}/{CHAT_LIMITS.maxUserMessageWords} từ
               </span>
+            ) : (
+              <span>{`Tối đa ${CHAT_LIMITS.maxUserMessageWords} từ · ${CHAT_LIMITS.maxHistoryMessages} tin gần nhất gửi AI`}</span>
             )}
+            <span>·</span>
+            <span>Thông tin tham khảo · Kiểm tra giá vé chính thức trước khi đi</span>
           </div>
-          <p className="mt-1 text-center text-[10px] text-muted">
-            Thông tin tham khảo · Kiểm tra giá vé chính thức trước khi đi
-          </p>
         </footer>
       </section>
 
@@ -761,6 +891,32 @@ function CopyIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="9" y="9" width="13" height="13" rx="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function HistoryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
     </svg>
   );
 }

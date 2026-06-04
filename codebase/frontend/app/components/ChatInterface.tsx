@@ -57,6 +57,32 @@ const INITIAL_MESSAGE: Message = {
 function createId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+const DANGEROUS_ACTIVITIES = [
+  "tàu lượn", "thác nước", "cơn thịnh nộ", "zeus", "drop", "mighty",
+  "cảm giác mạnh", "mạo hiểm", "độ cao", "lao xuống", "xoay", "quay"
+];
+
+function detectWarnings(content: string, messages: Message[]): string[] {
+  const allText = messages.map(m => m.content).join(" ").toLowerCase();
+  const isElderly = /\b([6-9]\d|1[0-2]\d)\s*tuổi|cụ|ông bà|người già|cao tuổi/.test(allText);
+  const isPregnant = /mang thai|bầu/.test(allText);
+  const hasHealthIssue = /tim mạch|huyết áp|động kinh/.test(allText);
+
+  if (!isElderly && !isPregnant && !hasHealthIssue) return [];
+
+  const warnings: string[] = [];
+  const lower = content.toLowerCase();
+
+  for (const act of DANGEROUS_ACTIVITIES) {
+    if (lower.includes(act)) {
+      if (isElderly) warnings.push(`⚠️ "${act}" có thể không phù hợp với người cao tuổi`);
+      if (isPregnant) warnings.push(`⚠️ "${act}" không phù hợp với phụ nữ mang thai`);
+      if (hasHealthIssue) warnings.push(`⚠️ "${act}" cần kiểm tra với bác sĩ trước`);
+      break;
+    }
+  }
+  return warnings;
+}
 
 function renderMarkdown(text: string) {
   return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -462,7 +488,13 @@ export default function ChatInterface() {
             {messages.map((m) => (
               <div key={m.id} className="animate-in">
                 {m.role === "assistant" ? (
-                  <AssistantMessage content={m.content} />
+                  <AssistantMessage
+                    content={m.content}
+                    warnings={detectWarnings(m.content, messages)}
+                    onSwapActivity={() =>
+                      sendMessage("Hoạt động này không phù hợp, gợi ý trò khác phù hợp hơn")
+                    }
+                  />
                 ) : (
                   <p className="ml-auto max-w-[85%] rounded-2xl bg-[#f3f4f6] px-4 py-2.5 text-sm leading-relaxed">
                     {m.content}
@@ -647,7 +679,15 @@ function PositionMovedNotice({ content }: { content: string }) {
   );
 }
 
-function AssistantMessage({ content }: { content: string }) {
+function AssistantMessage({
+  content,
+  warnings,
+  onSwapActivity,
+}: {
+  content: string;
+  warnings?: string[];
+  onSwapActivity?: () => void;
+}) {
   if (!content) return <TypingIndicator />;
 
   return (
@@ -658,6 +698,25 @@ function AssistantMessage({ content }: { content: string }) {
           __html: renderMarkdown(content).replace(/\n/g, "<br />"),
         }}
       />
+
+      {/* Cảnh báo */}
+      {warnings && warnings.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 space-y-1">
+          {warnings.map((w, i) => (
+            <p key={i} className="text-xs text-red-700">{w}</p>
+          ))}
+          {onSwapActivity && (
+            <button
+              type="button"
+              onClick={onSwapActivity}
+              className="mt-2 rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition"
+            >
+              Đổi trò khác
+            </button>
+          )}
+        </div>
+      )}
+
       <button
         type="button"
         className="text-muted hover:text-foreground"

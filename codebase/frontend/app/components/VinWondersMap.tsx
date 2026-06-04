@@ -417,9 +417,8 @@ export default function VinWondersMap({
     <div className="relative h-full min-h-[280px] w-full flex-1">
       <div
         ref={containerRef}
-        className={`absolute inset-0 z-0 bg-[#f4f3ef] ${
-          pickOnMap ? "cursor-crosshair" : ""
-        }`}
+        className={`absolute inset-0 z-0 bg-[#f4f3ef] ${pickOnMap ? "cursor-crosshair" : ""
+          }`}
       />
       {pickOnMap && (
         <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow">

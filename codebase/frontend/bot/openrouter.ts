@@ -1,9 +1,15 @@
-import { VINWONDERS_SYSTEM_PROMPT } from "./prompts";
-import type { ChatMessage } from "./types";
+// ✅ Chỉ 1 import duy nhất
+import {
+  VINWONDERS_SYSTEM_PROMPT,
+  HAPPY_PATH_PROMPT,
+  LOW_CONFIDENCE_PROMPT,
+  FAILURE_PATH_PROMPT,
+  CORRECTION_PATH_PROMPT,
+} from "./prompts";
+import type { ChatMessage, PathType } from "./types";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-/** Router tự chọn model free còn hoạt động — ổn định hơn ID model cũ */
 const DEFAULT_MODEL =
   process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
 
@@ -17,29 +23,45 @@ function getApiKey(): string {
   return key;
 }
 
+// ✅ Đặt selectPrompt TRƯỚC toOpenRouterMessages vì hàm dưới dùng nó
+function selectPrompt(pathType: PathType): string {
+  switch (pathType) {
+    case "happy": return HAPPY_PATH_PROMPT;
+    case "low-confidence": return LOW_CONFIDENCE_PROMPT;
+    case "failure": return FAILURE_PATH_PROMPT;
+    case "correction": return CORRECTION_PATH_PROMPT;
+  }
+}
+
+// ✅ Thêm pathType vào params
 function toOpenRouterMessages(
   messages: ChatMessage[],
-  positionContext?: string
+  positionContext?: string,
+  pathType?: PathType
 ) {
-  const systemContent = positionContext
-    ? `${VINWONDERS_SYSTEM_PROMPT}\n\n## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
+  const basePrompt = pathType
+    ? selectPrompt(pathType)
     : VINWONDERS_SYSTEM_PROMPT;
+
+  const systemContent = positionContext
+    ? `${basePrompt}\n\n## Vị trí người dùng & khoảng cách route (cập nhật mỗi tin nhắn)\n${positionContext}`
+    : basePrompt;
+
   return [
     { role: "system" as const, content: systemContent },
     ...messages.map((m) => ({
-      role: (m.role === "user" ? "user" : "assistant") as
-        | "user"
-        | "assistant",
+      role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
       content: m.content,
     })),
   ];
 }
 
-/** Gọi OpenRouter (OpenAI-compatible) và stream từng đoạn text */
+// ✅ Thêm pathType vào params và truyền xuống toOpenRouterMessages
 export async function* streamOpenRouterReply(
   messages: ChatMessage[],
   model = DEFAULT_MODEL,
-  positionContext?: string
+  positionContext?: string,
+  pathType?: PathType
 ): AsyncGenerator<string> {
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
@@ -53,7 +75,7 @@ export async function* streamOpenRouterReply(
     },
     body: JSON.stringify({
       model,
-      messages: toOpenRouterMessages(messages, positionContext),
+      messages: toOpenRouterMessages(messages, positionContext, pathType), // ✅ truyền pathType
       stream: true,
     }),
   });

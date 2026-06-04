@@ -50,18 +50,7 @@ function renderMarkdown(text: string) {
 }
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    try {
-      const saved = localStorage.getItem("vinwonders_chat_history");
-      if (saved) {
-        const parsed = JSON.parse(saved) as Message[];
-        if (parsed.length > 0) return parsed;
-      }
-    } catch {
-      // ignore parse/storage errors
-    }
-    return [INITIAL_MESSAGE];
-  });
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -113,6 +102,18 @@ export default function ChatInterface() {
       behavior: "smooth",
     });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("vinwonders_chat_history");
+      if (saved) {
+        const parsed = JSON.parse(saved) as Message[];
+        if (parsed.length > 0) setMessages(parsed);
+      }
+    } catch {
+      // ignore parse/storage errors
+    }
+  }, []);
 
   useEffect(() => {
     try {

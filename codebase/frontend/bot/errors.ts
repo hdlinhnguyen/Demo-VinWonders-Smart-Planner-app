@@ -1,5 +1,5 @@
-function parseOpenRouterMessage(raw: string): string | null {
-  const match = raw.match(/OpenRouter \d+: (\{[\s\S]*\})/);
+function parseProviderMessage(raw: string): string | null {
+  const match = raw.match(/(?:OpenRouter|OpenAI) \d+: (\{[\s\S]*\})/);
   if (!match) return null;
   try {
     const body = JSON.parse(match[1]) as {
@@ -16,10 +16,38 @@ export function mapProviderError(err: unknown): {
   message: string;
 } {
   const raw = err instanceof Error ? err.message : String(err);
-  const apiMsg = parseOpenRouterMessage(raw);
+  const apiMsg = parseProviderMessage(raw);
+
+  if (raw.includes("OPENAI_API_KEY")) {
+    return { status: 503, message: raw };
+  }
 
   if (raw.includes("OPENROUTER_API_KEY")) {
     return { status: 503, message: raw };
+  }
+
+  if (raw.startsWith("OpenAI")) {
+    if (raw.includes("401") || raw.includes("invalid_api_key")) {
+      return {
+        status: 401,
+        message:
+          "OpenAI API key không hợp lệ. Kiểm tra OPENAI_API_KEY tại https://platform.openai.com/api-keys",
+      };
+    }
+    if (raw.includes("429") || raw.includes("rate_limit")) {
+      return {
+        status: 429,
+        message:
+          "OpenAI hết quota hoặc vượt giới hạn (429). Đợi vài phút hoặc kiểm tra billing.",
+      };
+    }
+    if (apiMsg) {
+      return { status: 500, message: `OpenAI: ${apiMsg}` };
+    }
+    return {
+      status: 500,
+      message: "Không thể kết nối tới OpenAI. Vui lòng thử lại.",
+    };
   }
 
   if (raw.includes("401") || raw.includes("User not found")) {

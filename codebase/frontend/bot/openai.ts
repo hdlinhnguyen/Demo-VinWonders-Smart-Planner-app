@@ -2,36 +2,32 @@ import { toLLMMessages } from "./messages";
 import { parseSSEContentStream } from "./sseStream";
 import type { ChatMessage, PathType } from "./types";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 const DEFAULT_MODEL =
-  process.env.OPENROUTER_MODEL?.trim() || "openrouter/free";
+  process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
 
 function getApiKey(): string {
-  const key = process.env.OPENROUTER_API_KEY?.trim();
+  const key = process.env.OPENAI_API_KEY?.trim();
   if (!key) {
     throw new Error(
-      "OPENROUTER_API_KEY chưa được cấu hình. Thêm vào frontend/.env"
+      "OPENAI_API_KEY chưa được cấu hình. Thêm vào frontend/.env"
     );
   }
   return key;
 }
 
-export async function* streamOpenRouterReply(
+export async function* streamOpenAIReply(
   messages: ChatMessage[],
   model = DEFAULT_MODEL,
   positionContext?: string,
   pathType?: PathType
 ): AsyncGenerator<string> {
-  const res = await fetch(OPENROUTER_URL, {
+  const res = await fetch(OPENAI_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getApiKey()}`,
       "Content-Type": "application/json",
-      "HTTP-Referer":
-        process.env.OPENROUTER_SITE_URL?.trim() || "http://localhost:3000",
-      "X-Title":
-        process.env.OPENROUTER_APP_NAME?.trim() || "VinWonders Assistant",
     },
     body: JSON.stringify({
       model,
@@ -42,11 +38,11 @@ export async function* streamOpenRouterReply(
 
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`OpenRouter ${res.status}: ${detail}`);
+    throw new Error(`OpenAI ${res.status}: ${detail}`);
   }
 
   if (!res.body) {
-    throw new Error("OpenRouter không trả về stream");
+    throw new Error("OpenAI không trả về stream");
   }
 
   yield* parseSSEContentStream(res.body);

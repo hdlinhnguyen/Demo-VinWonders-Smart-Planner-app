@@ -3,6 +3,8 @@ import { mapProviderError } from "@/bot/errors";
 import { runAgentStream } from "@/bot/agent";
 import type { ChatMessage } from "@/bot/types";
 import type { ItineraryItem } from "@/bot/tools";
+import { streamLLMReply } from "@/bot/provider";
+import type { ChatMessage, PathType } from "@/bot/types";
 import { buildFullUserLocationContext } from "@/app/data/locationProximity";
 import { detectProximityIntent } from "@/app/data/locationIntent";
 import {
@@ -144,11 +146,17 @@ export async function handleChat(
       : itineraryNote;
   }
 
-  const agentMessages = messages.map((m, i) =>
-    i === messages.length - 1 && m.role === "user"
-      ? { role: "user" as const, content: lastUserContent }
-      : m
+  const llmMessages = prepareMessagesForLLM(
+    messages.map((m, i) =>
+      i === messages.length - 1 && m.role === "user"
+        ? { role: "user", content: lastUserContent }
+        : m
+    )
   );
+
+  const pathType = detectPathType(messages);
+  const encoder = new TextEncoder();
+  const generator = streamLLMReply(llmMessages, positionContext, pathType);
 
   let agentResult: Awaited<ReturnType<typeof runAgentStream>>;
   try {
@@ -159,7 +167,31 @@ export async function handleChat(
     return Response.json({ error: message }, { status });
   }
 
-  return new Response(agentResult.stream, {
+  if (first.done) {
+    return Response.json(
+      { error: "LLM không trả về nội dung" },
+      { status: 502 }
+    );
+  }
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(first.value));
+      try {
+        for await (const chunk of generator) {
+          if (chunk) controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      } catch (err) {
+        console.error("[api/chat] stream", err);
+        const { message } = mapProviderError(err);
+        controller.enqueue(encoder.encode(`\n\n⚠️ ${message}`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Product Canvas - VinWonders Smart Itinerary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased p-6 md:p-12">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <div class="border-b border-slate-200 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <span class="text-xs font-bold tracking-wider text-emerald-600 uppercase bg-emerald-50 px-3 py-1 rounded-full">AI Initiative Proposal</span>
+                <h1 class="text-3xl font-extrabold text-slate-900 mt-2 tracking-tight">AI PRODUCT CANVAS</h1>
+                <p class="text-slate-500 mt-1 text-sm md:text-base">Dự án: Tích hợp Trợ lý Lập lịch trình Thông minh trên VinWonders app</p>
+            </div>
+            <div class="text-left md:text-right text-xs text-slate-400 font-mono bg-white p-3 rounded-lg shadow-sm border border-slate-100">
+                <div>Target: Review</div>
+                <div>Status: Proposal (V1.0)</div>
+                <div>Framework: Human-Centered AI</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">TARGET PERSONA</h3>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">3T</div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-900">Gia Đình Đa Thế Hệ, Cá nhân</h4>
+                                <span class="text-[10px] font-mono text-slate-400">Core Segment • High Ticket Size</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-3 leading-relaxed">
+                            Nhóm khách đi du lịch tự túc gồm bố mẹ, con nhỏ và ông bà hoặc cá nhân đơn lẻ thể trạng yếu. Đây là nhóm có tỷ lệ chi tiêu F&B và dịch vụ phụ trợ cao (nhất) nhưng có biên độ nhạy cảm về thể lực (cực kỳ) lớn.
+                        </p>
+                    </div>
+                    <div class="mt-4 space-y-2 text-xs text-slate-600">
+                        <div class="flex justify-between border-b border-slate-100 pb-1.5"><span>Đặc trưng di chuyển:</span> <span class="text-slate-900 font-medium text-right">Chậm, cần nghỉ ngơi ngắt quãng</span></div>
+                        <div class="flex justify-between border-b border-slate-100 pb-1.5"><span>Yêu cầu an toàn:</span> <span class="text-slate-900 font-medium text-right">Ràng buộc chiều cao & thể trạng</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">CUSTOMER PAIN POINTS</h3>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-rose-500 border-y border-r border-slate-100">
+                            <span class="font-bold text-slate-900 block mb-1">1. Quá tải nhận thức (Cognitive Overload)</span>
+                            <p class="text-slate-600 leading-relaxed">Khách phải tự tìm hiểu, đối chiếu thủ công các dịch vụ tĩnh, đơn lẻ trên app dưới trời nắng nóng, dẫn đến mất thời gian và trải nghiệm không tối ưu.</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-rose-500 border-y border-r border-slate-100">
+                            <span class="font-bold text-slate-900 block mb-1">2. Vỡ lịch trình do thiếu ràng buộc thực tế</span>
+                            <p class="text-slate-600 leading-relaxed">Xếp hàng lâu nhưng bị từ chối ở cửa trò chơi do con nhỏ thiếu chiều cao, hoặc người lớn tuổi kiệt sức vì di chuyển liên tục qua các phân khu xa nhau.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">THE AI SOLUTIONS</h3>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500 border-y border-r border-slate-100">
+                            <span class="font-bold text-slate-900 block mb-1">1. Lịch trình cá nhân hóa tự động</span>
+                            <p class="text-slate-600 leading-relaxed">AI phân tích nhanh thông tin đầu vào (thời gian, thành viên, sở thích) để tự động sắp xếp phân khu, show diễn, điểm ăn uống vào các mốc giờ cố định.</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500 border-y border-r border-slate-100">
+                            <span class="font-bold text-slate-900 block mb-1">2. Bảo vệ trải nghiệm bằng Constraint Filter</span>
+                            <p class="text-slate-600 leading-relaxed">Xử lý rủi ro gợi ý sai thể trạng bằng bộ lọc ràng buộc cứng, cảnh báo điều kiện và hỏi xác nhận thông minh giúp loại bỏ các hoạt động quá sức với trẻ em/người già.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md hover:border-slate-300">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight">VALUE <span class="text-slate-400 font-normal">| Giá trị cốt lõi</span></h2>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Bài toán & Giải pháp AI</p>
+                    
+                    <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <div>
+                            <strong class="text-slate-900 block mb-1">Target User & Pain point:</strong>
+                            Khách tham quan VinWonders (đặc biệt là gia đình đa thế hệ có cả trẻ nhỏ và người già). Hiện tại, họ rơi vào trạng thái <span class="text-amber-700 bg-amber-50 px-1 rounded font-medium">quá tải nhận thức (cognitive overload)</span> và mệt mỏi thể chất khi phải tự tra cứu, sắp xếp thủ công các dịch vụ tĩnh, đơn lẻ trên app hiện tại dưới thời tiết nắng nóng, dẫn đến lỡ show và giảm chất lượng trải nghiệm (minh chứng qua các đánh giá thấp trên các chuyên trang du lịch).
+                        </div>
+                        <div class="pt-2 border-t border-slate-100">
+                            <strong class="text-slate-900 block mb-1">AI Solution:</strong>
+                            Chuyển đổi ứng dụng từ "công cụ tra cứu tĩnh" thành "trợ lý đồng hành chủ động". AI tự động phân tích đa tham số đầu vào (Preferences: thời gian, cấu trúc thành viên, sở thích) để <span class="text-blue-700 font-medium">thiết lập một lộ trình tối ưu hóa cá nhân hóa theo thời gian thực (Dynamic Real-time Itinerary)</span> bao gồm cả vui chơi, nghỉ ngơi và ăn uống.
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-blue-600 font-medium bg-blue-50/50 p-3 rounded-xl">
+                    <span>Mục tiêu: Tăng chỉ số hài lòng (CSAT) & Doanh thu dịch vụ (In-app Cross-selling).</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md hover:border-slate-300">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight">TRUST <span class="text-slate-400 font-normal">| Thiết kế Niềm tin (UX/UI)</span></h2>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Cơ chế phát hiện và xử lý lỗi (Failure Path)</p>
+                    
+                    <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <div>
+                            <strong class="text-slate-900 block mb-1">Nhận diện lỗi (Failure Detection):</strong>
+                            Người dùng dễ dàng nhận biết AI sai sót khi lịch trình hiển thị các hoạt động không khớp với thể trạng thực tế (ví dụ: gợi ý trò cảm giác mạnh cho người cao tuổi, hoặc thời gian di chuyển giữa các phân khu không thực tế).
+                        </div>
+                        <div>
+                            <strong class="text-slate-900 block mb-1">Chiến lược phục hồi trải nghiệm (Recovery Strategy):</strong>
+                            Áp dụng mô hình kiểm soát 3 cấp độ mượt mà, giữ chân khách hàng tuyệt đối:
+                            <ul class="list-disc list-inside mt-1 space-y-1 text-slate-600 pl-1">
+                                <li><span class="font-medium text-slate-900">Cấp độ 1 (Hoàn tác/Undo):</span> Nút gỡ bỏ nhanh gợi ý sai chỉ với 1-click để khôi phục trạng thái cũ.</li>
+                                <li><span class="font-medium text-slate-900">Cấp độ 2 (Sửa trực tiếp/Quick Swap):</span> Hỗ trợ thao tác kéo thả timeline hoặc gợi ý ngay 2-3 phương án thay thế an toàn đã qua bộ lọc ràng buộc (Constraint Filter).</li>
+                                <li><span class="font-medium text-slate-900">Cấp độ 3 (Human-in-the-Loop):</span> Nếu user liên tục sửa đổi thất bại, app chủ động cung cấp nút kết nối trực tiếp với Đội ngũ Hỗ trợ viên mặt đất kèm theo toàn bộ ngữ cảnh (Context Handover) để con người can thiệp xử lý từ xa.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-purple-600 font-medium bg-purple-50/50 p-3 rounded-xl">
+                    <span>Nguyên lý: AI hỗ trợ (Augmented), con người làm chủ quyết định cuối cùng.</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md hover:border-slate-300">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v6a2 2 0 012-2m14-0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight">FEASIBILITY <span class="text-slate-400 font-normal">| Tính khả thi kỹ thuật</span></h2>
+                    </div>
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ĐƠN GIẢN HÓA HẠ TẦNG & BIÊN ĐỘ RỦI RO</p>
+                        <span class="text-[11px] font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">Prototype: No Backend / No DB</span>
+                    </div>
+                    
+                    <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                        <div class="overflow-hidden border border-slate-200 rounded-xl">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-3 w-1/2 border-r border-slate-200">CHI PHÍ & ĐỘ TRỄ</th>
+                                        <th class="p-3 w-1/2">DỮ LIỆU CẦN CÓ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 text-xs">
+                                    <tr class="align-top">
+                                        <td class="p-3 border-r border-slate-200 bg-white">
+                                            <p class="font-semibold text-slate-900 mb-1">Mô hình lai (đã triển khai):</p>
+                                            Câu hỏi dạng <i class="text-slate-500">“gần nhất / trạm y tế / chỗ ăn / chỉ đường…”</i> đi thẳng nhánh <b>deterministic</b> qua hàm <code class="bg-slate-100 px-1 rounded text-amber-700 font-mono">detectProximityIntent</code> &rarr; <code class="bg-slate-100 px-1 rounded font-mono">buildProximityReply</code> + thuật toán BFS trên <code class="bg-slate-100 px-1 rounded font-mono">routeGraph</code>. <span class="text-emerald-700 font-medium">Không tốn token, độ trễ cục bộ &lt; vài trăm ms.</span> 
+                                            <p class="mt-2">Chỉ các câu tư vấn chung/lịch trình mới gọi <b>OpenRouter</b> (stream). Kiểm soát token đầu vào bằng <code class="bg-slate-100 px-1 rounded font-mono">prepareMessagesForLLM</code> (tối đa 10 tin, rút gọn assistant cũ) và giới hạn cứng <code class="bg-slate-100 px-1 rounded font-mono">CHAT_MAX_USER_WORDS=200</code>; không chặn <code class="bg-slate-100 px-1 rounded font-mono">max_tokens</code> đầu ra.</p>
+                                        </td>
+                                        <td class="p-3 bg-white">
+                                            <span class="font-semibold text-slate-900 block mb-1">Không cần PII / định danh khách:</span>
+                                            Sử dụng tệp tĩnh <code class="bg-slate-100 px-1 rounded text-indigo-700 font-mono">vinwonders_locations.json</code> (~64 địa điểm, phân zone, route, <code class="bg-slate-100 px-1 rounded font-mono">searchTerms</code>, giờ mở cửa mô phỏng) kết hợp <code class="bg-slate-100 px-1 rounded font-mono">mock_map</code> (hệ tọa độ Leaflet CRS.Simple).
+                                            <p class="mt-2">Vị trí của user được mô phỏng bằng một <b>chấm xanh giả lập</b> qua hook <code class="bg-slate-100 px-1 rounded font-mono">useRouteSimulation</code>, gửi kèm mỗi request POST lên endpoint <code class="bg-slate-100 px-1 rounded font-mono">/api/chat</code> (<code class="bg-slate-100 px-1 rounded font-mono">userPosition</code>, <code class="bg-slate-100 px-1 rounded font-mono">lastReplyPosition</code>).</p>
+                                            <p class="mt-2 text-slate-400 font-medium">❌ Chưa tích hợp camera đám đông / GPS thật / lịch show realtime từ hệ thống Park Operations.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pt-1">
+                            <strong class="text-slate-900 block mb-1">Rủi ro kỹ thuật lớn nhất:</strong>
+                            Hiện tượng <b>“Digital traffic jam” / Gợi ý đồng pha</b> — LLM có xu hướng gợi ý cùng một địa điểm “hot” cho nhiều nhóm khách; đồng thời mạng lưới tuyến đường <code class="bg-slate-100 px-1 rounded font-mono">routeGraph</code> hiện tại cấu trúc dạng vòng khu + trục hub, dẫn đến việc nếu tất cả người dùng được chỉ đường về cùng một POI, trải nghiệm hiển thị bản đồ vẫn hợp lệ nhưng <span class="text-rose-600 font-medium">không phản ánh đúng tải lượng thực tế của công viên.</span>
+                            <p class="mt-1 text-xs text-slate-500 font-medium"><span class="text-slate-800 font-semibold">Cách xử lý (phù hợp repo hiện tại + hướng mở rộng):</span></p>
+                            <ul class="list-disc list-inside text-xs space-y-1 pl-1 text-slate-600">
+                                <li>Giữ luồng <i>proximity deterministic</i> làm nguồn sự thật (single source of truth) cho tác vụ “gần nhất theo route”.</li>
+                                <li>Khi scale hệ thống: Bổ sung cơ chế <b>phân tán gợi ý</b> (trả về danh sách top-3 cùng loại, xoay vòng thuật toán theo cụm <code class="bg-slate-100 px-1 rounded font-mono">locationId</code>) thay vì luôn trả về một đích đến duy nhất.</li>
+                                <li>Sử dụng cấu trúc <code class="bg-slate-100 px-1 rounded font-mono">detectPathType</code> để ép phân nhánh <code class="bg-slate-100 px-1 rounded font-mono">low-confidence</code>, chủ động hỏi thêm thông tin về nhóm đi/trẻ em/sức khỏe trước khi LLM dựng lịch trình nhằm giảm tỷ lệ lịch “một cỡ cho tất cả”.</li>
+                            </ul>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100">
+                            <blockquote class="bg-rose-50/70 border-l-4 border-rose-500 p-3 rounded-r-xl">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 uppercase tracking-wider mb-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                    Kill Switch / Ngưỡng dừng dự án
+                                </span>
+                                <p class="text-xs text-rose-900 leading-relaxed font-medium">
+                                    Dừng hoặc thu hẹp ngay phạm vi thử nghiệm <b>Alpha</b> nếu sau 2 tuần vận hành pilot nội bộ gặp phải ít nhất một trong các điều kiện sau:
+                                </p>
+                                <ol class="list-decimal list-inside text-[11px] text-rose-800 mt-1.5 space-y-1 font-mono">
+                                    <li>Chi phí OpenRouter trung bình <b class="text-rose-900">&gt; $0.05 / phiên chat có gọi LLM</b> (sau khi tách biệt luồng proximity).</li>
+                                    <li>Tỷ lệ lỗi <b>“Không có đường route”</b> (<code class="bg-slate-100 px-1 rounded text-rose-900">pathError</code>) trả về từ hàm <code class="bg-slate-100 px-1 rounded text-rose-900">tripFromLocationId</code> vượt quá <b class="text-rose-900">15%</b> tổng số lượt điều hướng chỉ đường.</li>
+                                    <li>Tỷ lệ người dùng phải <b>hỏi lại cùng một intent proximity</b> sau khi đã di chuyển (khi app hiển thị banner <i>“Bạn đã di chuyển”</i>) vượt quá <b class="text-rose-900">20%</b> — chứng tỏ dữ liệu ngữ cảnh/vị trí không đủ tin cậy cho production.</li>
+                                </ol>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between transition-all hover:shadow-md hover:border-slate-300">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight">LEARNING SIGNAL <span class="text-slate-400 font-normal">| Tín hiệu học máy</span></h2>
+                    </div>
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">VÒNG LẬP PHẢN HỒI CẢI TIẾN MÔ HÌNH (FEEDBACK LOOP)</p>
+                        <span class="text-[11px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">Repo State: Client-Side Signals Only</span>
+                    </div>
+                    
+                    <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <div>
+                            <span class="text-xs font-bold text-slate-900 block mb-1.5 uppercase tracking-wide">Kiến trúc luồng dữ liệu (Data Pipeline):</span>
+                            Khi người dùng chủ động <b>sửa đổi hành vi so với gợi ý của AI</b> (như: chat lại sau khi di chuyển vị trí, từ chối luồng chỉ đường, thay đổi đích đến trên tab Discovery, bấm "+ Chọn" một địa điểm khác, hoặc trực tiếp phản đối/sửa đổi lịch trình trong hội thoại), hệ thống sẽ phân tách dữ liệu thành 2 luồng:
+                            
+                            <div class="overflow-hidden border border-slate-200 rounded-xl mt-2">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase">
+                                            <th class="p-2.5 w-1/2 border-r border-slate-200">Frontend (Đã có / Sẵn sàng ghi)</th>
+                                            <th class="p-2.5 w-1/2 bg-indigo-50/40 text-indigo-900">Backend DB (Đề xuất — Chưa triển khai)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200 text-[11px] font-mono">
+                                        <tr class="align-top">
+                                            <td class="p-2.5 border-r border-slate-200 bg-white space-y-1">
+                                                <div>• <code class="text-slate-800">localStorage</code>: lưu trữ <code class="text-amber-800">vinwonders_chat_history</code> ghi nhận toàn bộ hội thoại.</div>
+                                                <div>• Hàm phát hiện lệch vị trí: kết hợp <code class="text-indigo-600">userPosition</code> + <code class="text-indigo-600">lastReplyPosition</code> &rarr; <code class="text-indigo-600">buildMovedContextNote</code>.</div>
+                                                <div>• Phản hồi chỉ đường: kiểm soát trạng thái tương tác qua cặp biến <code class="text-teal-700">pendingNavSuggestion</code> và <code class="text-teal-700">previewNavigation</code> / <code class="text-teal-700">cancelNavigation</code>.</div>
+                                                <div>• Ghi nhận địa điểm thực tế quan tâm thông qua mảng <code class="text-blue-700">selectedIds</code> tại view Discovery.</div>
+                                                <div>• Quét an toàn client-side bằng regex thông qua hàm <code class="text-red-700">detectWarnings</code> ngăn chặn LLM đề xuất trò nguy hiểm.</div>
+                                                <div>• Tệp cấu hình <code class="bg-slate-100 px-1 rounded">bot/prompts.ts</code> chứa prompt phân nhánh hội thoại qua hàm <code class="text-purple-700">detectPathType</code>.</div>
+                                            </td>
+                                            <td class="p-2.5 bg-indigo-50/10 space-y-1 text-slate-700">
+                                                <p class="font-sans font-semibold text-indigo-950 mb-1">Ghi nhận Correction Log ẩn danh:</p>
+                                                <code class="block bg-slate-100 p-1 rounded text-[10px] border border-slate-200 mb-1 text-slate-800">[AI_Output_Snapshot] -> [User_Action]</code>
+                                                <div>• Định nghĩa tập hành động mẫu (Action type): <code class="text-rose-700">reject_nav</code>, <code class="text-rose-700">change_destination</code>, <code class="text-rose-700">proximity_reask_after_move</code>, <code class="text-rose-700">edit_itinerary_message</code>, <code class="text-rose-700">spot_selected</code>.</div>
+                                                <div>• Siêu dữ liệu đính kèm: Lưu trữ trực tiếp biến <code class="font-semibold">pathType</code>, loại hình <code class="font-semibold">intent</code> và mã vùng neo <code class="font-semibold">anchorLocationId</code> (Cam kết: Tuyệt đối không lưu giữ danh tính khách hàng).</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="pt-1">
+                            <strong class="text-slate-900 block mb-1">Bánh đà tăng trưởng sản phẩm (Data Flywheel):</strong>
+                            Từ hệ thống log trên, tiến hành gom cụm dữ liệu tự động (Aggregate <i>“Frequent Corrections”</i>) theo nhóm đặc trưng hành vi (như cụm gia đình có trẻ nhỏ, cụm nhóm ưa mạo hiểm,...) đồng bộ trực tiếp với cơ chế slotting của hàm <code class="bg-slate-100 px-1 rounded font-mono text-xs">detectPathType</code> và cấu trúc định danh nhóm của hệ thống client regex:
+                            <ul class="list-disc list-inside text-xs mt-1 space-y-1 pl-1 text-slate-600">
+                                <li><i class="text-slate-800 font-medium">Ví dụ thực tế:</i> Nếu thống kê cho thấy <span class="font-semibold text-slate-900">&ge; 85%</span> số phiên có trẻ em thực hiện hành vi <b>bỏ hoặc thay đổi</b> các hoạt động ngoài trời vào khung giờ nắng nóng (12:00–13:30) để chuyển sang không gian mát mẻ, hệ thống sẽ tự động cập nhật rule của hệ thống prompt: Mặc định ưu tiên đẩy các nhà hàng hoặc khu máy lạnh nằm gần tuyến đường di chuyển trong <code class="bg-slate-100 px-1 rounded font-mono text-[11px]">LOW_CONFIDENCE</code> / <code class="bg-slate-100 px-1 rounded font-mono text-[11px]">HAPPY_PATH</code> prompt hoặc can thiệp thông qua bộ rule engine deterministic trước khi dữ liệu đẩy vào LLM.</li>
+                                <li><i class="text-slate-800 font-medium">Tối ưu hóa Proximity:</i> Nếu xuất hiện nhiều sự kiện liên tiếp dạng <code class="bg-slate-100 px-1 rounded font-mono text-[11px]">proximity_reask_after_move</code>, hệ thống sẽ gia tăng trọng số ưu tiên cho hàm <b>invalidate</b> kết quả cũ (dựa trên logic có sẵn trong file mã nguồn <code class="bg-slate-100 px-1 rounded font-mono text-[11px]">positionChange.ts</code>) để ép giao diện gọi lệnh <b>re-fetch</b> làm mới dữ liệu một lần duy nhất, thay vì liên tục hiển thị câu hỏi đóng gây phiền hà cho khách hàng.</li>
+                            </ul>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100 text-xs font-medium text-emerald-800 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                            <b>💡 Kết luận chiến lược cho giai đoạn Hackathon:</b> Phiên bản Prototype hiện tại <b>đã tích lũy đủ các tín hiệu tương tác ngay tại lớp UI</b> để trình diễn trọn vẹn vòng lặp học hỏi (Feedback Loop). Bước phát triển tiếp theo chỉ cần xây dựng thêm duy nhất một API ghi nhận log đơn giản (xuất định dạng JSONL hoặc kết nối nhanh vào nền tảng Supabase) được kích hoạt từ luồng xử lý của hàm <code class="bg-slate-100 px-1 rounded font-mono text-[11px]">sendMessage</code> kết hợp với các sự kiện phát ra từ bản đồ map, sau đó tiến hành cập nhật batch định kỳ vào tệp cấu hình hệ thống hoặc hệ thống prompt — <span class="underline">Hoàn toàn không cần triển khai fine-tune model ngay trong giai đoạn này</span> nhằm tối ưu hóa tiến độ và chứng minh tính khả thi của vòng xoay flywheel trước Hội đồng Công nghệ.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-8 text-center text-xs text-slate-400 font-mono">
+            Tài liệu căn cứ cấu trúc code: api/chat.ts, bot/openrouter.ts, bot/prompts.ts, app/data/routeGraph.ts, proximityReply.ts, positionChange.ts, bot/chatLimits.ts, mock_data/vinwonders_locations.json.
+            <br><span class="font-sans block mt-1">VinWonders Smart Itinerary Project Architecture © 2026. Phát triển dựa trên nguyên lý Đơn giản hạ tầng - Tối đa hóa trải nghiệm.</span>
+        </div>
+    </div>
+
+</body>
+</html>

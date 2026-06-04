@@ -46,32 +46,21 @@ function positionHeader(pos: SimulatedPosition): string {
   );
 }
 
-function nearestExcludingStanding(
-  x: number,
-  y: number,
-  filter?: (loc: { id: string; type: string }) => boolean
-): LocationDistance[] {
-  const anchorId = nearestLocationIdAt(x, y);
-  const all = getNearestLocations(x, y, 20);
-  return all.filter((item) => {
-    if (filter && !filter({ id: item.id, type: item.type })) return false;
-    if (item.id === anchorId && item.routeDistance < AT_LOCATION_THRESHOLD) {
-      return false;
-    }
-    return true;
-  });
-}
-
 function nearestByTypeForVisit(
   x: number,
   y: number,
   type: string,
   limit: number
 ): LocationDistance[] {
-  return nearestExcludingStanding(x, y, (loc) => loc.type === type).slice(
-    0,
-    limit
-  );
+  const anchorId = nearestLocationIdAt(x, y);
+  return getNearestByType(x, y, type, limit + 3)
+    .filter((item) => {
+      if (item.id === anchorId && item.routeDistance < AT_LOCATION_THRESHOLD) {
+        return false;
+      }
+      return true;
+    })
+    .slice(0, limit);
 }
 
 function standingAtMessage(x: number, y: number): string | null {

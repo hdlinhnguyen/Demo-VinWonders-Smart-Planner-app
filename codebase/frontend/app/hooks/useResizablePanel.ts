@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 
 const STORAGE_KEY = "vinwonders-chat-width";
 
@@ -40,7 +46,7 @@ export function useResizablePanel({
   );
 
   useEffect(() => {
-    function onMove(e: MouseEvent) {
+    function onMove(e: globalThis.MouseEvent) {
       if (!dragging.current) return;
       setWidth(clamp(startWidth.current + (e.clientX - startX.current)));
     }
@@ -62,7 +68,7 @@ export function useResizablePanel({
   }, [clamp]);
 
   const startDrag = useCallback(
-    (e: MouseEvent) => {
+    (e: ReactMouseEvent) => {
       e.preventDefault();
       dragging.current = true;
       startX.current = e.clientX;

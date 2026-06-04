@@ -1,5 +1,6 @@
 import {
   handleChat,
+  parseClientId,
   parseLastReplyPosition,
   parseMessages,
   parseSavedItinerary,
@@ -21,5 +22,15 @@ export async function POST(req: NextRequest) {
   const userPosition = parseUserPosition(body);
   const lastReplyPosition = parseLastReplyPosition(body);
   const savedItinerary = parseSavedItinerary(body);
-  return handleChat(messages, userPosition, lastReplyPosition, savedItinerary);
+  const clientKey =
+    parseClientId(body) ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "anonymous";
+  return handleChat(
+    messages,
+    userPosition,
+    lastReplyPosition,
+    savedItinerary,
+    clientKey
+  );
 }

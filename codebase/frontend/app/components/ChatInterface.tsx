@@ -83,6 +83,20 @@ const INITIAL_MESSAGE: Message = {
 function createId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+
+const CLIENT_SEND_COOLDOWN_MS = 1500;
+const CLIENT_DUPLICATE_MS = 30_000;
+
+function getOrCreateClientId(): string {
+  if (typeof window === "undefined") return "ssr";
+  const key = "vinwonders_client_id";
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = createId();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
 const DANGEROUS_ACTIVITIES = [
   "tàu lượn", "thác nước", "cơn thịnh nộ", "zeus", "drop", "mighty",
   "cảm giác mạnh", "mạo hiểm", "độ cao", "lao xuống", "xoay", "quay"
@@ -133,6 +147,8 @@ export default function ChatInterface() {
   >(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSendAtRef = useRef(0);
+  const lastSentContentRef = useRef("");
   const { width: chatWidth, startDrag } = useResizablePanel({
     defaultWidth: 420,
     minWidth: 300,
@@ -367,6 +383,24 @@ export default function ChatInterface() {
     setInputError(null);
     setPositionMovedNotice(null);
 
+    const now = Date.now();
+    if (now - lastSendAtRef.current < CLIENT_SEND_COOLDOWN_MS) {
+      const waitSec = Math.ceil(
+        (CLIENT_SEND_COOLDOWN_MS - (now - lastSendAtRef.current)) / 1000
+      );
+      setInputError(`Bạn gửi quá nhanh. Vui lòng đợi ${waitSec} giây.`);
+      return;
+    }
+    if (
+      lastSentContentRef.current === content &&
+      now - lastSendAtRef.current < CLIENT_DUPLICATE_MS
+    ) {
+      setInputError(
+        "Tin nhắn trùng với lần gửi trước. Hãy chỉnh nội dung hoặc đợi một chút."
+      );
+      return;
+    }
+
     setLastQuery(content);
     setDiscoveryOpen(true);
 
@@ -411,6 +445,8 @@ export default function ChatInterface() {
     );
 
     setIsLoading(true);
+    lastSendAtRef.current = now;
+    lastSentContentRef.current = content;
 
     const assistantId = createId();
 
@@ -421,6 +457,7 @@ export default function ChatInterface() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history,
+          clientId: getOrCreateClientId(),
           userPosition: {
             ...livePosition,
             updatedAt: Date.now(),
@@ -437,6 +474,12 @@ export default function ChatInterface() {
           if (data?.error && typeof data.error === "string") errMsg = data.error;
         } catch {
           /* ignore */
+        }
+        if (res.status === 429) {
+          setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+          setInput(content);
+          setInputError(errMsg);
+          return;
         }
         throw new Error(errMsg);
       }

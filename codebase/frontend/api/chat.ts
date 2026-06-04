@@ -2,6 +2,7 @@ import {
   prepareMessagesForLLM,
   validateUserMessage,
 } from "@/bot/chatLimits";
+import { checkChatSpam } from "@/bot/chatSpam";
 import { mapProviderError } from "@/bot/errors";
 import { runAgentStream } from "@/bot/agent";
 import type { ChatMessage } from "@/bot/types";
@@ -12,6 +13,18 @@ import {
   buildMovedContextNote,
   type PositionSnapshot,
 } from "@/app/data/positionChange";
+import {
+  buildHarmfulRequestRefusal,
+  detectHarmfulUserContent,
+} from "@/app/data/contentSafety";
+import {
+  buildUnverifiedInfoReply,
+  detectUnverifiedInfoRequest,
+} from "@/app/data/hallucinationControl";
+import {
+  buildUnsupportedParkReply,
+  detectOtherParkMention,
+} from "@/app/data/parkScope";
 import {
   buildProximityReply,
   formatMissingPositionReply,
@@ -57,6 +70,12 @@ export function parseUserPosition(body: unknown): SimulatedPosition | null {
   return p;
 }
 
+export function parseClientId(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const id = (body as { clientId?: unknown }).clientId;
+  return typeof id === "string" && id.trim().length > 0 ? id.trim() : null;
+}
+
 export function parseLastReplyPosition(body: unknown): PositionSnapshot | null {
   if (!body || typeof body !== "object") return null;
   const snap = (body as { lastReplyPosition?: unknown }).lastReplyPosition;
@@ -90,7 +109,8 @@ export async function handleChat(
   messages: ChatMessage[],
   userPosition?: SimulatedPosition | null,
   lastReplyPosition?: PositionSnapshot | null,
-  savedItinerary?: ItineraryItem[] | null
+  savedItinerary?: ItineraryItem[] | null,
+  clientKey = "anonymous"
 ): Promise<Response> {
   if (messages.length === 0) {
     return Response.json(
@@ -112,6 +132,40 @@ export async function handleChat(
     return Response.json({ error: lastValidation.error }, { status: 400 });
   }
   const lastUserContent = lastValidation.content;
+
+  const spam = checkChatSpam(clientKey, lastUserContent);
+  if (!spam.ok) {
+    return Response.json(
+      { error: spam.error, retryAfterSec: spam.retryAfterSec },
+      { status: 429 }
+    );
+  }
+
+  if (detectHarmfulUserContent(lastUserContent)) {
+    return Response.json({
+      mode: "policy",
+      content: buildHarmfulRequestRefusal(),
+      suggestNav: null,
+    });
+  }
+
+  const unverified = detectUnverifiedInfoRequest(lastUserContent);
+  if (unverified) {
+    return Response.json({
+      mode: "unverified_info",
+      content: buildUnverifiedInfoReply(unverified),
+      suggestNav: null,
+    });
+  }
+
+  const otherPark = detectOtherParkMention(lastUserContent);
+  if (otherPark) {
+    return Response.json({
+      mode: "park_scope",
+      content: buildUnsupportedParkReply(otherPark),
+      suggestNav: null,
+    });
+  }
 
   const proximityIntent = detectProximityIntent(lastUserContent);
   if (proximityIntent) {

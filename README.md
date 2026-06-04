@@ -13,7 +13,7 @@ Tạo `frontend/.env` (hoặc `.env.local`) với:
 
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
 Chạy:
@@ -28,11 +28,10 @@ Mở [http://localhost:3000](http://localhost:3000). Hướng dẫn chi tiết, 
 
 ## Phân công
 
-| **Thành viên** | **Việc phụ trách** | **Bằng chứng cần có trong repo** |
-|---|---|---|
-| Hoàng Đức Trường | | |
-| Nguyễn Hoàng Tùng | | |
-| Nguyễn Hồ Diệu Linh | | |
-| Nguyễn Thị Bích Duyên | | |
-| Nguyễn Thị Hiểu | | |
-| Trần Hoàng Hà | | |
+| **Thành viên** | **Việc phụ trách** | 
+|---|---|
+| Nguyễn Hồ Diệu Linh & Nguyễn Thị Bích Duyên | Research / evidence | 
+| Nguyễn Thị Hiểu | SPEC |
+| Hoàng Đức Trường & Trần Hoàng Hà | Prototype |
+| Nguyễn Hoàng Tùng | Test / failure path |
+| Everyone | Demo script / repo |

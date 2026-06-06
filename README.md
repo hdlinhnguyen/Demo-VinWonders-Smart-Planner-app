@@ -1,5 +1,8 @@
 Here is our demo product, bravo to us ^^
-![](.png)
+![](demo.png)
+
+The following is our step by step while doing AI Product Hackathon. You can read AI Product Canvas to know more about our project.
+
 ## Day 06 - AI Product Hackathon
 
 ## Cách chạy prototype

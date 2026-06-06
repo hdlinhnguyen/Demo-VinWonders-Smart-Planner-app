@@ -1,4 +1,6 @@
-# Day 06 - AI Product Hackathon
+Here is our demo product, bravo to us ^^
+![](.png)
+## Day 06 - AI Product Hackathon
 
 ## Cách chạy prototype
 

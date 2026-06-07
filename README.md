@@ -1,7 +1,8 @@
-Here is our demo product, bravo to us ^^
+This repo contains our demo product and how to build it from the beginning:
+
 ![](demo.png)
 
-The following is our step by step while doing AI Product Hackathon. You can read AI Product Canvas to know more about our project.
+The following is our step by step while doing AI Product Hackathon. You can read the file named AI Product Canvas to know more about our project.
 
 ## Day 06 - AI Product Hackathon
 
